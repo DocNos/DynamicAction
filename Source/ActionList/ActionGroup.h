@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GM_DynamicAction.h"
+#include "Action.h"
 #include "UObject/NoExportTypes.h"
 #include "ActionGroup.generated.h"
 
@@ -27,9 +27,12 @@ private:
 	bool bIsActive_ = true;
 
 public:
-	void Initialize(const FString& InGroupName);
+	UFUNCTION(BlueprintCallable, Category = "Grouping"
+	, meta = (Tooltip="Initialize this group"))
+	void Initialize(const FString& _groupName);
 
-	UFUNCTION(BlueprintCallable, Category = "Grouping")
+	UFUNCTION(BlueprintCallable, Category = "Grouping"
+	, meta = (Tooltip = "Add existing action to the group"))
 	void AddAction(UAction* action);
 
 	UFUNCTION(BlueprintCallable, Category = "Grouping")
@@ -40,6 +43,15 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Grouping")
 	void Clear();
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Grouping")
+	bool CanUndo() const { return currIndex_ >= 0 && bIsActive_; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action Group")
+	bool CanRedo() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Action Group")
+	void SetActive(bool _bIsActive) { bIsActive_ = _bIsActive; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Grouping")
 	FString GetGroupName() const { return GroupName_; }

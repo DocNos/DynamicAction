@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GM_DynamicAction.h"
+#include "Action.h"
 #include "Action_Move.generated.h"
 
 /**

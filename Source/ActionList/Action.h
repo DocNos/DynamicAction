@@ -3,12 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GM_DynamicAction.h"
 #include "UObject/NoExportTypes.h"
 #include "Action.generated.h"
 
 
-
+UENUM(BlueprintType)
+enum class EActionType : uint8
+{
+	DEFAULT	UMETA(DisplayName = "DEFAULT")
+	, Move	UMETA(DisplayName = "Move")
+};
 /**
  * 
  */
@@ -23,6 +27,9 @@ private:
 	UPROPERTY()
 	EActionType actionType = EActionType::DEFAULT;
 
+	UPROPERTY()
+	bool bIsBlocking_ = false;
+
 public:
 	UPROPERTY(BlueprintReadWrite)
 	float actionDuration;
@@ -32,6 +39,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	float actionCurrTime;	
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
+	virtual bool IsBlocking(){ return bIsBlocking_; }
 
 	UFUNCTION(BlueprintCallable)
 	virtual EActionType GetType() { return actionType; }
