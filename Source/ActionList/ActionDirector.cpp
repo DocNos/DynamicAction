@@ -36,10 +36,13 @@ void UActionDirector::Tick(float dt)
 			}
 		}
 	}
+	OnDirectorTick.Broadcast(dt);
 }
 
 void UActionDirector::CompleteAllActive()
 {
+	// advance execution to end time. 
+	
 }
 
 void UActionDirector::ExecuteAction(UAction* Action)
@@ -131,6 +134,7 @@ bool UActionDirector::HasActiveActions() const
 	{
 		if(action->IsActive()) return true;
 	}
+	return false;
 }
 
 UActionDirector* UActionDirector::GetDirector(const UObject* WorldContextObject)

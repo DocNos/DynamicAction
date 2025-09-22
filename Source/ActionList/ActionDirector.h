@@ -12,7 +12,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionExecuted, UAction*, Action);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionUndone, UAction*, Action);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionRedone, UAction*, Action);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
 
 
 UCLASS(Blueprintable)
@@ -35,15 +35,20 @@ private:
 
 public:
 	// Overrides
+	UFUNCTION(BlueprintCallable, Category = "Director")
 	virtual void Init() override;
 	virtual void Shutdown() override;
 
 	virtual bool IsTickable() const {return true;}
+	UFUNCTION(BlueprintCallable, Category = "Director")
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UActionDirector, STATGROUP_Tickables); }
 	
 
 	// Events
+	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
+	FOnDirectorTick OnDirectorTick;
+
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
 	FOnActionExecuted OnActionExecuted;
 
@@ -103,7 +108,7 @@ public:
 	void SetDebugging(bool _doDebug);
 
 	UFUNCTION(BlueprintCallable, Category = "Director")
-	bool isDebugging() { return bDebugLogging_; }
+	bool isDebugging() const { return bDebugLogging_; }
 
 	
 
