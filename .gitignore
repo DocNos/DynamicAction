@@ -1,3 +1,5 @@
+
+
 # Visual Studio 2022 user-specific files
 .vs/
 .vsconfig
@@ -99,6 +101,8 @@ RawContent/
 
 # Starter content
 Content/StarterContent/*
+Content/__ExternalActors__/*
+Content/__ExternalObjects__/*
 
 # Developer-specific content (optional - uncomment if needed)
 # Content/Developers/*
