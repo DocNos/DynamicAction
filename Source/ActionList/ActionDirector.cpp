@@ -6,42 +6,70 @@
 void UActionDirector::Init()
 {
 	Super::Init();
-	ActionHistory_.Reserve(MaxHistorySize);
 	LogDebug("Director Initialized");
-	
+	builder_ = NewObject<UActionBuilder>();	
 
 }
 
 void UActionDirector::Shutdown()
 {
-	ClearHistory();
+	StopAllActions();
+	ActiveActions_.Empty();
+	QueuedActions_.Empty();
 	Super::Shutdown();
 }
 
 void UActionDirector::Tick(float dt)
 {
 	//Super::Tick(dt);
-	for (int32 i = ActionHistory_.Num() - 1; i >= 0; --i)
+	for (int32 i = ActiveActions_.Num() - 1; i >= 0; --i)
 	{
-		UAction* currAction = ActionHistory_[i];
+		UAction* currAction = ActiveActions_[i];
 		if (currAction && currAction->IsActive())
 		{
 			if (currAction->IsBlocking()) return;
 			if (currAction->Update(dt))
 			{
 				currAction->SetActive(false);
+				currAction->SetDeleteFlag(true);
+				OnActionCompleted.Broadcast(currAction);
 				LogDebug(FString::Printf
 				(TEXT("Action of type %s completed. Index %d")
 				 , *UEnum::GetDisplayValueAsText(currAction->GetType()).ToString(), i));
 			}
 		}
 	}
+	for (auto action : ActiveActions_)
+	{
+		if(action->DoDelete()) ActiveActions_.Remove(action);
+	}
+	for (auto action : QueuedActions_)
+	{
+		if (action->DoDelete()) QueuedActions_.Remove(action);
+	}
+	
+	// Switch queued actions to active
+	if (ActiveActions_.Num() == 0 && QueuedActions_.Num() > 0)
+	{
+		ProcessQueue();
+	}
 	OnDirectorTick.Broadcast(dt);
 }
 
-void UActionDirector::CompleteAllActive()
+void UActionDirector::ProcessQueue()
 {
-	// advance execution to end time. 
+	if (QueuedActions_.Num() > 0)
+	{
+		UAction* next = QueuedActions_[0];
+		QueuedActions_.RemoveAt(0);
+		ExecuteAction(next);
+
+		if (QueuedActions_.Num() == 0)
+		{
+			OnSequenceCompleted.Broadcast(next);
+			LogDebug("Sequence Complete");
+		}
+	}
 	
 }
 
@@ -52,85 +80,106 @@ void UActionDirector::ExecuteAction(UAction* Action)
 		LogDebug("Action cannot be executed");
 		return;
 	}
-	// Clear and stop execution for any actions after current index (Previously undone actions)
-	if (CurrentIndex < ActionHistory_.Num() - 1)
-	{
-		// Stop any active actions we're about to remove
-		for (int32 i = CurrentIndex + 1; i < ActionHistory_.Num(); ++i)
-		{
-			if (ActionHistory_[i]->IsActive())
-			{
-				ActionHistory_[i]->SetActive(false);
-				// Could call Undo here to reset their state
-			}
-		}
-
-		ActionHistory_.RemoveAt(CurrentIndex + 1,
-								ActionHistory_.Num() - CurrentIndex - 1);
-		LogDebug(FString::Printf(TEXT("Cleared %d future actions"),
-								 ActionHistory_.Num() - CurrentIndex - 1));
-	}
-	Action->actionCurrTime = 0.f;
-	Action->SetActive(true);
 	
-	ActionHistory_.Add(Action);
-	++CurrentIndex;
-	OnActionExecuted.Broadcast(Action);
-	LogDebug(FString::Printf(TEXT("Started execution of type %s: Index %d, Duration: %.2f"),
+	Action->actionCurrTime_ = 0.f;
+	Action->SetActive(true);
+	Action->Execute();
+
+	ActiveActions_.Add(Action);
+	OnActionStarted.Broadcast(Action);
+	LogDebug(FString::Printf(TEXT("Started execution of type %s: Duration: %.2f"),
 							 *UEnum::GetDisplayValueAsText(Action->GetType()).ToString()
-							,CurrentIndex, Action->actionDuration));
+							,Action->actionDuration_));
 }
 
-bool UActionDirector::Undo()
+void UActionDirector::QueueAction(UAction* action)
 {
-	if (!CanUndo())
+	if (!action || !action->CanExecute())
 	{
-		LogDebug("Nothing to undo");
-		return false;
+		LogDebug("Action cannot be queued");
+		return;
 	}
-	UAction* currAction = ActionHistory_[CurrentIndex];
-	if (currAction->IsActive())
-	{
-		currAction->SetActive(false);
-	}
-	currAction->Undo();
-	--CurrentIndex;
-	OnActionUndone.Broadcast(currAction);
-	LogDebug(FString::Printf(TEXT("Undone action of type %s. Index now %d")
-	, *UEnum::GetDisplayValueAsText(currAction->GetType()).ToString(), CurrentIndex));
-	return true;
+	QueuedActions_.Add(action);
+	LogDebug( FString::Printf( TEXT("Queued action of type: %s"),
+							 *UEnum::GetDisplayValueAsText(action->GetType()).ToString()));
 }
 
-bool UActionDirector::Redo()
+void UActionDirector::ExecuteSimultaneous(const TArray<UAction*>& Actions)
 {
-	if (!CanRedo())
+	int32 ExecutedCount = 0;
+
+	for (UAction* Action : Actions)
 	{
-		LogDebug("Nothing to redo");
-		return false;
+		if (Action && Action->CanExecute())
+		{
+			Action->actionCurrTime_ = 0.0f;
+			Action->Execute();
+			Action->SetActive(true);
+			ActiveActions_.Add(Action);
+			OnActionStarted.Broadcast(Action);
+			ExecutedCount++;
+		}
 	}
-	++CurrentIndex;
-	UAction* currAction = ActionHistory_[CurrentIndex];
-	currAction->actionCurrTime = 0.f;
-	currAction->Execute();
-	currAction->SetActive(true);
 
-	OnActionRedone.Broadcast(currAction);
-	LogDebug(FString::Printf(TEXT("Redoing action of type %s at index %d. Duration: %.2f")
-			, *UEnum::GetDisplayValueAsText(currAction->GetType()).ToString()
-			, CurrentIndex, currAction->actionDuration));
-	return true;
+	LogDebug(FString::Printf(TEXT("Started %d simultaneous actions"), ExecutedCount));
 }
 
-void UActionDirector::ClearHistory()
+void UActionDirector::ExecuteSequence(const TArray<UAction*>& actions)
 {
-	ActionHistory_.Empty();
-	CurrentIndex = -1;
-	LogDebug("History Cleared");
+	if(actions.Num() == 0) return;
+	if (actions[0])
+	{
+		ExecuteAction(actions[0]);
+	}
+	for (int32 i = 1; i < actions.Num(); ++i)
+	{
+		if (actions[i])
+		{
+			QueueAction(actions[i]);
+		}
+	}
+	LogDebug(FString::Printf(TEXT("Started new sequence of %d actions"), actions.Num()));
 }
+
+void UActionDirector::StopAction(UAction* Action)
+{
+	if (!Action) return;
+
+	Action->SetActive(false);
+	Action->SetDeleteFlag(true);
+
+	LogDebug(FString::Printf(TEXT("Stopped action: %s"),
+							 *Action->GetClass()->GetName()));
+}
+
+void UActionDirector::StopAllActions()
+{
+	for (UAction* Action : ActiveActions_)
+	{
+		if (Action)
+		{
+			StopAction(Action);
+		}
+	}
+	for (UAction* action : QueuedActions_)
+	{
+		if (action)
+		{
+			StopAction(action);
+		}
+	}
+
+	//ActiveActions_.Empty();
+	//QueuedActions.Empty();
+
+	LogDebug("Stopped all actions");
+}
+
+
 
 bool UActionDirector::HasActiveActions() const
 {
-	for (UAction* action : ActionHistory_)
+	for (UAction* action : ActiveActions_)
 	{
 		if(action->IsActive()) return true;
 	}

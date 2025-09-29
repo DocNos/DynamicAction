@@ -6,13 +6,11 @@
 
 void UAction_Move::Execute()
 {
+	startPos_ = affectedObject_->GetTransform().GetLocation();
 }
 
 
 
-void UAction_Move::Undo()
-{
-}
 
 bool UAction_Move::CanExecute() const
 {
@@ -21,22 +19,23 @@ bool UAction_Move::CanExecute() const
 
 bool UAction_Move::Update(float _dt)
 {
-	actionCurrTime += _dt;
-	return (actionCurrTime >= actionDuration);
+	//actionCurrTime_ += _dt;
+	OnActionUpdate.Broadcast(_dt);
+	return (actionCurrTime_ >= actionDuration_);
 }
 
-UAction_Move *UAction_Move::Create(AActor *actionable
-, FVector endPos, float duration)
-{
-	actionType = EActionType::Move;
-	affectedObject = actionable;
-	currPos_ = actionable->GetTransform().GetLocation();
-	actionDuration = duration;
-	endPos_ = endPos;
-	return this;
-}
+//UAction_Move *UAction_Move::Create(AActor *actionable
+//, FVector endPos, float duration)
+//{
+//	actionType = EActionType::Move;
+//	affectedObject = actionable;
+//	currPos_ = actionable->GetTransform().GetLocation();
+//	actionDuration = duration;
+//	endPos_ = endPos;
+//	return this;
+//}
 
 EActionType UAction_Move::GetType()
 {
-	return actionType;
+	return EActionType::Move;
 }

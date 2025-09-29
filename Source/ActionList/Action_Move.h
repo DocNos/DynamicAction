@@ -14,14 +14,15 @@ class ACTIONLIST_API UAction_Move : public UAction
 {
 	GENERATED_BODY()
 private:
-	EActionType actionType = EActionType::Move;
+	//EActionType actionType_ = EActionType::Move;
 
 
 public:	
 	
 	virtual void Execute() override;
-	virtual void Undo() override;
-	virtual bool CanExecute() const override;	
+	//virtual void Undo() override;
+	virtual bool CanExecute() const override;
+	//UFUNCTION(BlueprintCallable)
 	virtual bool Update(float) override;
 	virtual EActionType GetType() override;
 	//float actionDuration;
@@ -30,8 +31,29 @@ public:
 	//EActionType type;
 
 public:
-	UFUNCTION(BlueprintCallable)
-	UAction_Move *Create(AActor *actionable, FVector endPos, float duration);
+	// // Clean one-line creation from anywhere
+	// UAction_Move* MoveAction = UAction_Move::Create(this, MyActor, TargetPos, 2.0f);
+	UFUNCTION(BlueprintCallable, Category = "Action Factory")
+	static UAction_Move* Create(UObject* Outer, AActor* actionable
+	, FVector _endPos, float duration)
+	{
+		UAction_Move* NewAction = NewObject<UAction_Move>(Outer);
+		NewAction->Initialize(actionable, _endPos, duration);
+		return NewAction;
+	}
+	void Initialize(AActor* Target, FVector Destination, float Duration)
+	{
+		affectedObject_ = Target;
+		endPos_ = Destination;
+		actionDuration_ = Duration;
+		actionCurrTime_ = 0.0f;
+
+		if (Target)
+		{
+			startPos_ = Target->GetActorLocation();
+			currPos_ = startPos_;
+		}
+	}
 
 	// Might need startpos for interp.
 	UPROPERTY(BlueprintReadWrite, Category = "Move")
@@ -39,4 +61,8 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Move")
 	FVector endPos_;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Move")
+	FVector startPos_;
+
 };

@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "Action.h"
 #include "Tickable.h"
+#include "ActionBuilder.h"
 #include "Engine/GameInstance.h"
 #include "ActionDirector.generated.h"
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionExecuted, UAction*, Action);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionUndone, UAction*, Action);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionRedone, UAction*, Action);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionStarted, UAction*, Action);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionCompleted, UAction*, Action);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSequenceCompleted, UAction*, Action);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
 
 
@@ -20,14 +21,16 @@ class ACTIONLIST_API UActionDirector : public UGameInstance, public FTickableGam
 {
 	GENERATED_BODY()
 private:
+	//UPROPERTY()
+	//TArray<UAction*> ActionHistory_;
 	UPROPERTY()
-	TArray<UAction*> ActionHistory_;
-
-	// Current position in history (-1 means no history)
-	int32 CurrentIndex = -1;
+	UActionBuilder* builder_;
 
 	UPROPERTY()
-	int32 MaxHistorySize = 100;
+	TArray<UAction*> ActiveActions_;
+
+	UPROPERTY()
+	TArray<UAction*> QueuedActions_;
 
 	UPROPERTY()
 	bool bDebugLogging_ = true;
@@ -44,60 +47,59 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UActionDirector, STATGROUP_Tickables); }
 	
+	UFUNCTION(BlueprintCallable, BlueprintPure
+	, Category = "Gettor")
+	UActionBuilder* getBuilder() { return builder_;}
 
 	// Events
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
 	FOnDirectorTick OnDirectorTick;
 
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
-	FOnActionExecuted OnActionExecuted;
+	FOnActionStarted OnActionStarted;
 
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
-	FOnActionUndone OnActionUndone;
+	FOnActionCompleted OnActionCompleted;
 
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
-	FOnActionRedone OnActionRedone;
+	FOnSequenceCompleted OnSequenceCompleted;
 
 	// Core functionality	
-	UFUNCTION(BlueprintCallable, Category = "Director|Core"
-	, meta = (Tooltip = "Skip time execution") )
-	void CompleteAllActive();
-
-	UFUNCTION(BlueprintCallable, Category = "Director|Core",
-			  meta = (ToolTip = "Execute an action and add it to history"))
+	UFUNCTION(BlueprintCallable, Category = "Director|Actions",
+			  meta = (ToolTip = "Execute an action immediately"))
 	void ExecuteAction(UAction* Action);
 
-	UFUNCTION(BlueprintCallable, Category = "Director|Core",
-			  meta = (ToolTip = "Undo the last action"))
-	bool Undo();
+	UFUNCTION(BlueprintCallable, Category = "Director|Actions",
+			  meta = (ToolTip = "Add an action to execute after current queue"))
+	void QueueAction(UAction* action);
 
-	UFUNCTION(BlueprintCallable, Category = "Director|Core",
-			  meta = (ToolTip = "Redo the previously undone action"))
-	bool Redo();
+	UFUNCTION(BlueprintCallable, Category = "Director|Actions"
+			, meta = (ToolTip = "Execute a series simultaneously"))
+	void ExecuteSimultaneous(const TArray<UAction*>& actions);
 
-	// History management
-	UFUNCTION(BlueprintCallable, Category = "Director|History",
-			  meta = (ToolTip = "Clear all action history"))
-	void ClearHistory();
+	UFUNCTION(BlueprintCallable, Category = "Director|Actions"
+			, meta = (ToolTip = "Create a new sequence of actions"))
+	void ExecuteSequence(const TArray<UAction*>& sequence);
+
+	// Sequence control - TODO grouping
+	UFUNCTION(BlueprintCallable, Category = "Director|Control"
+			, meta = (ToolTip = "Stop an action and remove it from the sequence"))
+	void StopAction(UAction* Action);
+
+	UFUNCTION(BlueprintCallable, Category = "Director|Control"
+			, meta = (ToolTip = "Stop all actions and remove them from sequence"))
+	void StopAllActions();
+
+	// Action Creation
+	// UFUNCTION(BlueprintCallable, Category = "Director|Actions")
+	// UAction* CreateAction(EActionType type);
+
 
 	// Query functions
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query"
 	, meta = (ToolTip = "Check for currently active actions"))
 	bool HasActiveActions() const;
 	
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query"
-	, meta = (ToolTip = "Check if there is an action available to undo"))
-	bool CanUndo() const { return CurrentIndex >= 0; }
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query"
-	, meta = (ToolTip = "Redo a previously undone (future) action"))
-	bool CanRedo() const { return CurrentIndex < ActionHistory_.Num() - 1; }
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query")
-	int32 GetHistorySize() const { return ActionHistory_.Num(); }
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query")
-	int32 GetCurrentIndex() const { return CurrentIndex; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director",
 			  meta = (DisplayName = "Get Action Director", WorldContext = "WorldContextObject"))
@@ -114,8 +116,16 @@ public:
 
 protected:
 	void LogDebug(const FString& Message) const;
+	void ProcessQueue();
 
 };
+	//UFUNCTION(BlueprintCallable, Category = "Director|Control"
+	//		, meta = (ToolTip = "Pause a specific action for specified time"))
+	//void PauseAction(UAction* action, float pauseTime);
+
+	//UFUNCTION(BlueprintCallable, Category = "Director|Control")
+	//void ResumeAllActions();
+
 	//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGroupCreated, const FString&, GroupName);
 	//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGroupRemoved, const FString&, GroupName);
 	
