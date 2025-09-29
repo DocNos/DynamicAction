@@ -14,7 +14,7 @@ void UActionGroup::Initialize(const FString& _groupName)
 
 void UActionGroup::AddAction(UAction* action)
 {
-	if(!action || !action->CanExecute() || !action->IsActive() || !bIsActive_) return;
+	if(!action || !action->IsActive() || !bIsActive_) return;
 	
 	// Clear redo history
 	// if (CurrentIndex < CommandHistory.Num() - 1)

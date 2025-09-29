@@ -20,15 +20,13 @@ private:
 public:	
 	
 	virtual void Execute() override;
+	//virtual void Init() override;
 	//virtual void Undo() override;
-	virtual bool CanExecute() const override;
+	//virtual bool CanExecute() const override;
 	//UFUNCTION(BlueprintCallable)
 	virtual bool Update(float) override;
 	virtual EActionType GetType() override;
-	//float actionDuration;
-	//AActor* affectedObject;
-	//float actionCurrTime;
-	//EActionType type;
+	//virtual void BindDelegates() override;
 
 public:
 	// // Clean one-line creation from anywhere
@@ -47,12 +45,22 @@ public:
 		endPos_ = Destination;
 		actionDuration_ = Duration;
 		actionCurrTime_ = 0.0f;
-
+		//OnActionInit.Add(this, )
 		if (Target)
 		{
 			startPos_ = Target->GetActorLocation();
 			currPos_ = startPos_;
 		}
+	}
+
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Action")
+	void BindDelegates();
+
+	void Init() override
+	{
+		BindDelegates();
+		Super::Init();		
 	}
 
 	// Might need startpos for interp.

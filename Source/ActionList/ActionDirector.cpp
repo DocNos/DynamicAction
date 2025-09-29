@@ -75,7 +75,7 @@ void UActionDirector::ProcessQueue()
 
 void UActionDirector::ExecuteAction(UAction* Action)
 {
-	if (!Action || !Action->CanExecute())
+	if (!Action)
 	{
 		LogDebug("Action cannot be executed");
 		return;
@@ -94,7 +94,7 @@ void UActionDirector::ExecuteAction(UAction* Action)
 
 void UActionDirector::QueueAction(UAction* action)
 {
-	if (!action || !action->CanExecute())
+	if (!action)
 	{
 		LogDebug("Action cannot be queued");
 		return;
@@ -110,7 +110,7 @@ void UActionDirector::ExecuteSimultaneous(const TArray<UAction*>& Actions)
 
 	for (UAction* Action : Actions)
 	{
-		if (Action && Action->CanExecute())
+		if (Action && !Action->IsBlocking())
 		{
 			Action->actionCurrTime_ = 0.0f;
 			Action->Execute();

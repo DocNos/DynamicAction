@@ -16,7 +16,7 @@ enum class EActionType : uint8
  * 
  */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionUpdate, float, deltaTime);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnActionInit);
 
 UCLASS(Abstract, Blueprintable) // Abstract base class.
 class ACTIONLIST_API UAction : public UObject
@@ -39,6 +39,9 @@ public:
 		
 	UPROPERTY(BlueprintAssignable)
 	FOnActionUpdate OnActionUpdate;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnActionInit OnActionInit;
 	
 	UPROPERTY(BlueprintReadWrite)
 	float actionDuration_;
@@ -50,9 +53,24 @@ public:
 	float actionCurrTime_;	
 
 	
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	virtual void Init()
+	{			
+		OnActionInit.Broadcast();		
+	}
 
+	
+	//virtual void BindDelegates();
 
-
+	//UFUNCTION(BlueprintCallable)
+	//virtual void BeginPlay();
+	//
+	//virtual void PostInitProperties() override
+	//{
+	//	Super::PostInitProperties();
+	//	BeginPlay();
+	//}
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
 	virtual bool IsBlocking(){ return bIsBlocking_; }
 
@@ -61,12 +79,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual void Execute() PURE_VIRTUAL(UAction::Execute, );
-
-	UFUNCTION(BlueprintCallable, Category = "Action")
-	virtual void Undo() PURE_VIRTUAL(UAction::Undo, );
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
-	virtual bool CanExecute() const { return true; }
+	//
+	//UFUNCTION(BlueprintCallable, Category = "Action")
+	//virtual void Undo() PURE_VIRTUAL(UAction::Undo, );
+	//
+	//UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
+	//virtual bool CanExecute() const { return true; }
 	
 	UFUNCTION(Blueprintable, Category = "Action")
 	virtual bool Update(float _dt) {return true;}

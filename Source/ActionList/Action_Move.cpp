@@ -9,13 +9,12 @@ void UAction_Move::Execute()
 	startPos_ = affectedObject_->GetTransform().GetLocation();
 }
 
+//void UAction_Move::Init()
+//{
+//	OnActionInit.Broadcast();
+//}
 
 
-
-bool UAction_Move::CanExecute() const
-{
-	return false;
-}
 
 bool UAction_Move::Update(float _dt)
 {
