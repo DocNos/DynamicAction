@@ -22,10 +22,16 @@ public:
 	//UAction* CreateAction(EActionType type);
 
 	UFUNCTION(BlueprintCallable, Category="Action Builder")
+	UAction* CreateAction(EActionType type, AActor* affectedObject, float duration);
+
+	UFUNCTION(BlueprintCallable, Category="Action Builder")
 	UAction_Move* CreateMoveAction(AActor* affectedObject, FVector endPos, float duration);
 
+	UFUNCTION(BlueprintCallable, Category="Action Builder")
+	void SetMoveClass(TSubclassOf<UAction_Move> moveClass) { MoveActionClass = moveClass;}
+
 	UPROPERTY(EditAnywhere, Category = "Action Builder")
-	TSubclassOf<UAction> ActionClass;
+	TSubclassOf<UAction_Move> MoveActionClass;
 
 	UPROPERTY(EditAnywhere, Category = "Action Builder")
 	float DefaultDuration = 1.0f;

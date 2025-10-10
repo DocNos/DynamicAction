@@ -14,8 +14,7 @@ class ACTIONLIST_API UAction_Move : public UAction
 {
 	GENERATED_BODY()
 private:
-	//EActionType actionType_ = EActionType::Move;
-
+	
 
 public:	
 	
@@ -31,37 +30,26 @@ public:
 public:
 	// // Clean one-line creation from anywhere
 	// UAction_Move* MoveAction = UAction_Move::Create(this, MyActor, TargetPos, 2.0f);
-	UFUNCTION(BlueprintCallable, Category = "Action Factory")
-	static UAction_Move* Create(UObject* Outer, AActor* actionable
-	, FVector _endPos, float duration)
-	{
-		UAction_Move* NewAction = NewObject<UAction_Move>(Outer);
-		NewAction->Initialize(actionable, _endPos, duration);
-		return NewAction;
-	}
+	//UFUNCTION(BlueprintCallable, Category = "Action Factory")
+	//static UAction_Move* Create(UObject* Outer, AActor* actionable
+	//, FVector _endPos, float duration)
+	//{
+	//	UAction_Move* NewAction = NewObject<UAction_Move>(Outer);
+	//	NewAction->Initialize(actionable, _endPos, duration);
+	//	return NewAction;
+	//}
+
+
 	void Initialize(AActor* Target, FVector Destination, float Duration)
 	{
 		affectedObject_ = Target;
 		endPos_ = Destination;
 		actionDuration_ = Duration;
 		actionCurrTime_ = 0.0f;
-		//OnActionInit.Add(this, )
-		if (Target)
-		{
-			startPos_ = Target->GetActorLocation();
-			currPos_ = startPos_;
-		}
+		SetType( EActionType::Move);
 	}
 
-	
-	UFUNCTION(BlueprintImplementableEvent, Category = "Action")
-	void BindDelegates();
-
-	void Init() override
-	{
-		BindDelegates();
-		Super::Init();		
-	}
+	void Init() override;
 
 	// Might need startpos for interp.
 	UPROPERTY(BlueprintReadWrite, Category = "Move")

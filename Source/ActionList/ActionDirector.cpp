@@ -4,10 +4,10 @@
 #include "ActionDirector.h"
 
 void UActionDirector::Init()
-{
+{	
+	builder_ = NewObject<UActionBuilder>();	
 	Super::Init();
 	LogDebug("Director Initialized");
-	builder_ = NewObject<UActionBuilder>();	
 
 }
 
@@ -75,7 +75,7 @@ void UActionDirector::ProcessQueue()
 
 void UActionDirector::ExecuteAction(UAction* Action)
 {
-	if (!Action)
+	if (!Action || !Action->CanExecute())
 	{
 		LogDebug("Action cannot be executed");
 		return;

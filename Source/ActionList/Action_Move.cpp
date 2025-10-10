@@ -7,12 +7,16 @@
 void UAction_Move::Execute()
 {
 	startPos_ = affectedObject_->GetTransform().GetLocation();
+	currPos_ = startPos_;
+	
 }
 
-//void UAction_Move::Init()
-//{
-//	OnActionInit.Broadcast();
-//}
+void UAction_Move::Init()
+{
+	BindDelegates();
+	//Super::Init();
+	OnActionInit.Broadcast();
+}
 
 
 

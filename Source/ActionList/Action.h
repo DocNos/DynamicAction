@@ -52,39 +52,36 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float actionCurrTime_;	
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "Action")
+	void BindDelegates();
 	
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual void Init()
-	{			
-		OnActionInit.Broadcast();		
+	{		
+		BindDelegates();
+		//OnActionInit.Broadcast();		
 	}
 
 	
-	//virtual void BindDelegates();
-
-	//UFUNCTION(BlueprintCallable)
-	//virtual void BeginPlay();
-	//
-	//virtual void PostInitProperties() override
-	//{
-	//	Super::PostInitProperties();
-	//	BeginPlay();
-	//}
-	
+		
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
 	virtual bool IsBlocking(){ return bIsBlocking_; }
+
+	virtual void SetType(EActionType type) { actionType_ = type; }
 
 	UFUNCTION(BlueprintCallable)
 	virtual EActionType GetType() { return actionType_; }
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual void Execute() PURE_VIRTUAL(UAction::Execute, );
-	//
-	//UFUNCTION(BlueprintCallable, Category = "Action")
-	//virtual void Undo() PURE_VIRTUAL(UAction::Undo, );
-	//
-	//UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
-	//virtual bool CanExecute() const { return true; }
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
+	virtual bool CanExecute() const 
+	{ 
+		return !bActionActive_ 
+			&& !bDoDelete_ 
+			&& (affectedObject_ == nullptr); 
+	}
 	
 	UFUNCTION(Blueprintable, Category = "Action")
 	virtual bool Update(float _dt) {return true;}

@@ -32,23 +32,28 @@ void UActionBuilder::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	// ...
 }
 
-//UAction* UActionBuilder::CreateAction(EActionType type)
-//{
-//	switch (type)
-//	{
-//		case(EActionType::Move):
-//		{
-//			UAction_Move* newMove = NewObject<UAction_Move>();
-//			return newMove;
-//		}
-//		default: return nullptr;
-//	}
-//}
+
+UAction* UActionBuilder::CreateAction(EActionType type, AActor* affectedObject, float duration)
+{
+	UAction* newAction = nullptr;
+	switch (type)
+	{
+		case(EActionType::Move): newAction = NewObject<UAction_Move>(this);
+		break;
+
+		default: return nullptr;
+	}
+
+	newAction->BindDelegates();
+	newAction->Init();
+	return newAction;
+}
 
 UAction_Move* UActionBuilder::CreateMoveAction(AActor* affectedObject, FVector endPos, float duration)
 {
-	UAction_Move* newMove = NewObject<UAction_Move>(this);
+	UAction_Move* newMove = NewObject<UAction_Move>(this, MoveActionClass);
 	newMove->Initialize(affectedObject, endPos, duration);
+	newMove->Init();
 
 	return newMove;
 }
