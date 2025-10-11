@@ -39,20 +39,20 @@ void UActionDirector::Tick(float dt)
 			}
 		}
 	}
-	for (auto action : ActiveActions_)
-	{
-		if(action->DoDelete()) ActiveActions_.Remove(action);
-	}
-	for (auto action : QueuedActions_)
-	{
-		if (action->DoDelete()) QueuedActions_.Remove(action);
-	}
+	//for (auto action : ActiveActions_)
+	//{
+	//	if(action->DoDelete()) ActiveActions_.Remove(action);
+	//}
+	//for (auto action : QueuedActions_)
+	//{
+	//	if (action->DoDelete()) QueuedActions_.Remove(action);
+	//}
 	
 	// Switch queued actions to active
-	if (ActiveActions_.Num() == 0 && QueuedActions_.Num() > 0)
-	{
-		ProcessQueue();
-	}
+	//if (ActiveActions_.Num() == 0 && QueuedActions_.Num() > 0)
+	//{
+	//	ProcessQueue();
+	//}
 	OnDirectorTick.Broadcast(dt);
 }
 
@@ -75,7 +75,7 @@ void UActionDirector::ProcessQueue()
 
 void UActionDirector::ExecuteAction(UAction* Action)
 {
-	if (!Action || !Action->CanExecute())
+	if (!Action) //|| !Action->CanExecute())
 	{
 		LogDebug("Action cannot be executed");
 		return;

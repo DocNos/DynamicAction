@@ -99,6 +99,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Director|Query")
 	TArray<UAction*> GetActiveActions() {return ActiveActions_;}
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query")
+	TArray<UAction*> GetQueuedActions() { return QueuedActions_; }
+
+
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query"
 	, meta = (ToolTip = "Check for currently active actions"))
 	bool HasActiveActions() const;
