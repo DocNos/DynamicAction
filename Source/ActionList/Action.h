@@ -60,9 +60,7 @@ public:
 	{		
 		BindDelegates();
 		//OnActionInit.Broadcast();		
-	}
-
-	
+	}	
 		
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
 	virtual bool IsBlocking(){ return bIsBlocking_; }
@@ -83,13 +81,13 @@ public:
 			&& (affectedObject_ == nullptr); 
 	}
 	
-	UFUNCTION(Blueprintable, Category = "Action")
+	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual bool Update(float _dt) {return true;}
 
-	UFUNCTION(Blueprintable, Category = "Action")
+	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual bool DoDelete() {return bDoDelete_; }
 
-	UFUNCTION(Blueprintable, Category = "Action")
+	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual void SetDeleteFlag(bool flag) { bDoDelete_ = flag; }
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
