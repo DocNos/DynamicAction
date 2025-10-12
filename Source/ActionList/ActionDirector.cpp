@@ -21,6 +21,7 @@ void UActionDirector::Shutdown()
 
 void UActionDirector::Tick(float dt)
 {
+	
 	//Super::Tick(dt);
 	for (int32 i = ActiveActions_.Num() - 1; i >= 0; --i)
 	{
@@ -32,6 +33,8 @@ void UActionDirector::Tick(float dt)
 			{
 				currAction->SetActive(false);
 				currAction->SetDeleteFlag(true);
+				DeleteMap_.Add(currAction, i);
+				//DeleteList_.Add(currAction);
 				OnActionCompleted.Broadcast(currAction);
 				LogDebug(FString::Printf
 				(TEXT("Action of type %s completed. Index %d")
@@ -39,21 +42,19 @@ void UActionDirector::Tick(float dt)
 			}
 		}
 	}
-	//for (auto action : ActiveActions_)
-	//{
-	//	if(action->DoDelete()) ActiveActions_.Remove(action);
-	//}
-	//for (auto action : QueuedActions_)
-	//{
-	//	if (action->DoDelete()) QueuedActions_.Remove(action);
-	//}
-	
-	// Switch queued actions to active
-	//if (ActiveActions_.Num() == 0 && QueuedActions_.Num() > 0)
-	//{
-	//	ProcessQueue();
-	//}
+	//ProcessDelete();
+	ProcessQueue();
 	OnDirectorTick.Broadcast(dt);
+}
+
+void UActionDirector::RemoveActive(UAction* action)
+{
+	//if(DeleteList_.IsEmpty()) return;
+	if (action->DoDelete())
+	{
+		ActiveActions_.RemoveAt(DeleteMap_[action]);
+	}
+	
 }
 
 void UActionDirector::ProcessQueue()
@@ -159,13 +160,16 @@ void UActionDirector::StopAllActions()
 		if (Action)
 		{
 			StopAction(Action);
+			Action->SetDeleteFlag(true);
 		}
+		
 	}
 	for (UAction* action : QueuedActions_)
 	{
 		if (action)
 		{
 			StopAction(action);
+			action->SetDeleteFlag(true);
 		}
 	}
 

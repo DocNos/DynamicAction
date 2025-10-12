@@ -33,6 +33,12 @@ private:
 	TArray<UAction*> QueuedActions_;
 
 	UPROPERTY()
+	TMap<UAction*, int> DeleteMap_;
+
+	UPROPERTY()
+	TArray<UAction*> DeleteList_; 
+
+	UPROPERTY()
 	bool bDebugLogging_ = true;
 	
 
@@ -90,12 +96,13 @@ public:
 			, meta = (ToolTip = "Stop all actions and remove them from sequence"))
 	void StopAllActions();
 
-	// Action Creation
-	// UFUNCTION(BlueprintCallable, Category = "Director|Actions")
-	// UAction* CreateAction(EActionType type);
-
+	UFUNCTION(BlueprintCallable, Category="Director|Control")
+	void RemoveActive(UAction* action);
 
 	// Query functions
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Director|Query")
+	TArray<UAction*> GetDeletes() {return DeleteList_;}
+
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Director|Query")
 	TArray<UAction*> GetActiveActions() {return ActiveActions_;}
 
