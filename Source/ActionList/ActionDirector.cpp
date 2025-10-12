@@ -215,7 +215,7 @@ void UActionDirector::LogDebug(const FString& Message) const
 {
 	if (bDebugLogging_)
 	{
-		UE_LOG(LogTemp, Log, TEXT("ActionDirector: %s"), *Message);
+		UE_LOG(LogTemp, Error, TEXT("ActionDirector: %s"), *Message);
 	}
 }
 
