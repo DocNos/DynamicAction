@@ -14,7 +14,6 @@ void UAction_Move::Execute()
 void UAction_Move::Init()
 {
 	BindDelegates();
-	//Super::Init();
 	OnActionInit.Broadcast();
 }
 

@@ -57,3 +57,35 @@ UAction_Move* UActionBuilder::CreateMoveAction(AActor* affectedObject, FVector e
 
 	return newMove;
 }
+
+UAction_Fade* UActionBuilder::CreateFadeAction(AActor* affectedObject, float startOpacity, float endOpacity, float duration)
+{
+	UAction_Fade* newFade = NewObject<UAction_Fade>(this, FadeActionClass);
+	newFade->Initialize(affectedObject, startOpacity, endOpacity, duration);
+	newFade->Init();
+	return newFade;
+}
+
+UAction_Rotate* UActionBuilder::CreateRotateAction(AActor* affectedObject, FRotator startRotation, FRotator endRotation, float duration)
+{
+	UAction_Rotate* newRotate = NewObject<UAction_Rotate>(this, RotateActionClass);
+	newRotate->Initialize(affectedObject, endRotation, duration);
+	newRotate->Init();
+	return newRotate;
+}
+
+UAction_Flip* UActionBuilder::CreateFlipAction(AActor* affectedObject, float duration)
+{
+	UAction_Flip* newFlip = NewObject<UAction_Flip>(this, FlipActionClass);
+	newFlip->Initialize(affectedObject, duration);
+	newFlip->Init();
+	return newFlip;
+}
+
+UAction_Delay* UActionBuilder::CreateDelayAction(AActor* affectedObject, float preDelay, float Duration)
+{
+	UAction_Delay* newDelay = NewObject<UAction_Delay>(this, DelayActionClass);
+	newDelay->Initialize(affectedObject, preDelay, Duration);
+	newDelay->Init();
+	return newDelay;
+}

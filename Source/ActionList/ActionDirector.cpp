@@ -28,7 +28,7 @@ void UActionDirector::Tick(float dt)
 		UAction* currAction = ActiveActions_[i];
 		if (currAction && currAction->IsActive())
 		{
-			if (currAction->IsBlocking()) return;
+			//if (currAction->IsBlocking()) return;
 			if (currAction->Update(dt))
 			{
 				currAction->SetActive(false);
@@ -81,7 +81,15 @@ void UActionDirector::ExecuteAction(UAction* Action)
 		LogDebug("Action cannot be executed");
 		return;
 	}
-	
+	if (IsObjectBlocked(Action->affectedObject_) && !Action->IsBlocking())
+	{
+		// Queue it instead of executing
+		QueueAction(Action);
+		LogDebug(FString::Printf(TEXT("%s blocked, queuing action of type %s") 
+				, Action->affectedObject_, 
+				*UEnum::GetDisplayValueAsText(Action->GetType()).ToString()));
+		return;
+	}
 	Action->actionCurrTime_ = 0.f;
 	Action->SetActive(true);
 	Action->Execute();
@@ -91,6 +99,19 @@ void UActionDirector::ExecuteAction(UAction* Action)
 	LogDebug(FString::Printf(TEXT("Started execution of type %s: Duration: %.2f"),
 							 *UEnum::GetDisplayValueAsText(Action->GetType()).ToString()
 							,Action->actionDuration_));
+}
+
+bool UActionDirector::IsObjectBlocked(AActor* object) const
+{
+	for (UAction* Action : ActiveActions_)
+	{
+		if (Action && Action->IsActive() && Action->IsBlocking()
+			&& Action->affectedObject_ == object)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void UActionDirector::QueueAction(UAction* action)

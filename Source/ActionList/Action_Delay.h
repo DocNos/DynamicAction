@@ -4,38 +4,36 @@
 
 #include "CoreMinimal.h"
 #include "Action.h"
-#include "Action_Flip.generated.h"
+#include "Action_Delay.generated.h"
 
 /**
  * 
  */
 UCLASS(Blueprintable)
-class ACTIONLIST_API UAction_Flip : public UAction
+class ACTIONLIST_API UAction_Delay : public UAction
 {
 	GENERATED_BODY()
-private:
-
-	
 
 public:
 	UPROPERTY(BlueprintReadWrite)
-	FRotator currRotation_;
+	float currPreDelay_;
+
 	UPROPERTY(BlueprintReadWrite)
-	FRotator flippedRotation_;
+	float preDelayDuration_;
 
 	virtual void Execute() override;
 	virtual bool Update(float) override;
-	virtual EActionType GetType() override { return EActionType::Flip; }
+	virtual EActionType GetType() override { return EActionType::Delay; }
 
-	UFUNCTION(BlueprintCallable, Category="Flip Action")
-	void UpdateCurrentRotation(FRotator rotation) { currRotation_ = rotation;}
-
-	void Initialize(AActor* Target, float Duration)
+	void Initialize(AActor* Target,
+					float _preDelay, float Duration)
 	{
 		affectedObject_ = Target;
+		bIsBlocking_ = true;
+		preDelayDuration_ = _preDelay;
 		actionDuration_ = Duration;
 		actionCurrTime_ = 0.0f;
-		SetType(EActionType::Flip);
+		SetType(EActionType::Delay);
 	}
 
 	void Init() override;

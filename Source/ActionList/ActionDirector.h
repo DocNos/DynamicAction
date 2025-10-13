@@ -75,6 +75,9 @@ public:
 			  meta = (ToolTip = "Execute an action immediately"))
 	void ExecuteAction(UAction* Action);
 
+	UFUNCTION(BlueprintCallable, Category="Director|Actions")
+	bool IsObjectBlocked(AActor* object) const;
+
 	UFUNCTION(BlueprintCallable, Category = "Director|Actions",
 			  meta = (ToolTip = "Add an action to execute after current queue"))
 	void QueueAction(UAction* action);

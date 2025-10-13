@@ -11,6 +11,10 @@ enum class EActionType : uint8
 {
 	DEFAULT	UMETA(DisplayName = "DEFAULT")
 	, Move	UMETA(DisplayName = "Move")
+	, Rotate UMETA(DisplayName = "Rotate")
+	, Flip UMETA(DisplayName = "Flip")
+	, Fade UMETA(DisplayName = "Fade")
+	, Delay UMETA(DisplayName = "Delay")
 };
 /**
  * 
@@ -29,14 +33,19 @@ private:
 	UPROPERTY()
 	EActionType actionType_ = EActionType::DEFAULT;
 
-	UPROPERTY()
-	bool bIsBlocking_ = false;
+	
+
+	//UPROPERTY()
+	//float blockTime = 0.f;
 
 	UPROPERTY()
 	bool bDoDelete_ = false;
 
 public:
 		
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsBlocking_ = false;
+
 	UPROPERTY(BlueprintAssignable)
 	FOnActionUpdate OnActionUpdate;
 
