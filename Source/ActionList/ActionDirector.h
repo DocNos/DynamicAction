@@ -91,6 +91,9 @@ public:
 	void ExecuteSequence(const TArray<UAction*>& sequence);
 
 	// Sequence control - TODO grouping
+
+	//TArray<UAction*> CreateActionSequence()
+
 	UFUNCTION(BlueprintCallable, Category = "Director|Control"
 			, meta = (ToolTip = "Stop an action and remove it from the sequence"))
 	void StopAction(UAction* Action);

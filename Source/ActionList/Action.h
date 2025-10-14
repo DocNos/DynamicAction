@@ -15,6 +15,7 @@ enum class EActionType : uint8
 	, Flip UMETA(DisplayName = "Flip")
 	, Fade UMETA(DisplayName = "Fade")
 	, Delay UMETA(DisplayName = "Delay")
+	, SpawnCard UMETA(DisplayName = "SpawnCard")
 };
 /**
  * 

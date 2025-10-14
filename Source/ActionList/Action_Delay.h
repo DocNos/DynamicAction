@@ -8,6 +8,8 @@
 
 /**
  * 
+*	Delay an action until completion
+* 
  */
 UCLASS(Blueprintable)
 class ACTIONLIST_API UAction_Delay : public UAction
@@ -21,14 +23,18 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float preDelayDuration_;
 
+	UPROPERTY(BlueprintReadWrite)
+	UAction* delayedAction_;
+
 	virtual void Execute() override;
 	virtual bool Update(float) override;
 	virtual EActionType GetType() override { return EActionType::Delay; }
 
-	void Initialize(AActor* Target,
+	void Initialize(AActor* Target, UAction* _delayedAction,
 					float _preDelay, float Duration)
 	{
 		affectedObject_ = Target;
+		delayedAction_ = _delayedAction;
 		bIsBlocking_ = true;
 		preDelayDuration_ = _preDelay;
 		actionDuration_ = Duration;

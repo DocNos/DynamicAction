@@ -9,8 +9,20 @@
 #include "Action_Rotate.h"
 #include "Action_Flip.h"
 #include "Action_Delay.h"
+#include "Action_SpawnCard.h"
 #include "Components/ActorComponent.h"
+#include "Engine/DataTable.h"
 #include "ActionBuilder.generated.h"
+
+//USTRUCT(Blueprintable)
+//struct ActionSequence : public FTableRowBase
+//{
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Action")
+//	EActionType ActionType = EActionType::Move;
+//
+//	
+//};
+
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -36,14 +48,19 @@ public:
 	float duration);
 
 	UFUNCTION(BlueprintCallable, Category="Action Builder")
-	UAction_Rotate* CreateRotateAction(AActor* affectedObject, FRotator startRotation,
+	UAction_Rotate* CreateRotateAction(AActor* affectedObject,
 	FRotator endRotation, float duration);
 
 	UFUNCTION(BlueprintCallable, Category="Action Builder")
 	UAction_Flip* CreateFlipAction(AActor* affectedObject, float duration);
 
 	UFUNCTION(BlueprintCallable, Category= "Action Builder")
-	UAction_Delay* CreateDelayAction(AActor* affectedObject, float preDelay, float duration);
+	UAction_Delay* CreateDelayAction(AActor* affectedObject, UAction* DelayedAction,
+					float preDelay, float duration);
+
+	UFUNCTION(BlueprintCallable, Category = "Action Builder")
+	UAction_SpawnCard* CreateSpawnAction(int playerOwner, int cardValue, FRotator spawnRotation,
+						FVector spawnLocation, float duration);
 
 	UFUNCTION(BlueprintCallable, Category="Action Builder")
 	void SetMoveClass(TSubclassOf<UAction_Move> moveClass) { MoveActionClass = moveClass;}
@@ -75,17 +92,19 @@ public:
 	UPROPERTY(EditAnywhere, Category= "Action Builder")
 	TSubclassOf<UAction_Delay> DelayActionClass;
 
+	UFUNCTION(BlueprintCallable, Category = "Action Builder")
+	void SetSpawnClass(TSubclassOf<UAction_SpawnCard> spawnClass) { SpawnActionClass = spawnClass; }
+
+	UPROPERTY(EditAnywhere, Category = "Action Builder")
+	TSubclassOf<UAction_SpawnCard> SpawnActionClass;
+
 	UPROPERTY(EditAnywhere, Category = "Action Builder")
 	float DefaultDuration = 1.0f;
 
-	//UPROPERTY(EditAnywhere, Category = "Action Builder")
-	//TArray<FVector> Waypoints;
-
-	//UFUNCTION(CallInEditor, Category = "Action Builder")
-	//void TestAction();
-
-	//UFUNCTION(CallInEditor, Category = "Action Builder")
-	//void AddToDirector();
+	//UFUNCTION(BlueprintCallable, Category="Action Builder|Sequencing")
+	////TArray<UAction*> CreateSequence(TArray<EActionType> actions, float duration
+		//				, float predelay, float delay);
+	
 
 protected:
 	// Called when the game starts

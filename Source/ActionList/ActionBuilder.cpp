@@ -33,6 +33,44 @@ void UActionBuilder::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 }
 
 
+//TArray<UAction*> UActionBuilder::CreateSequence(TArray<EActionType> actions, AActor* affectedObject
+//, FVector endPos, FRotator endRotation, float startOpacity, float endOpactiy, 
+//float duration, float predelay, float delay)
+//{
+//	TArray<UAction*> sequence;
+//	
+//	for (int i = 0; i < actions.Num(); ++i)
+//	{
+//		EActionType action = actions[i];
+//		switch (action) 
+//		{
+//			case(EActionType::Move): {
+//				sequence.Add(CreateMoveAction(affectedObject, endPos, duration));
+//			} break;
+//			case(EActionType::Rotate): {
+//				sequence.Add(CreateRotateAction(affectedObject, endRotation, duration));
+//			} break;
+//			case(EActionType::Flip): {
+//				sequence.Add(CreateFlipAction(affectedObject, duration));
+//			} break;
+//			case(EActionType::Fade): {
+//				sequence.Add(CreateFadeAction(affectedObject, startOpacity, endOpactiy, duration));
+//			} break;
+//			case(EActionType::Delay): {
+//				//EActionType next = (i+1 < actions.Num()) ? (actions[i+1]) : (actions[i]);
+//				//sequence.Add(CreateDelayAction(nullptr, ))
+//			} break;
+//			case(EActionType::SpawnCard): {
+//				sequence.Add(CreateSpawnAction())
+//			} break;
+//			default: continue;
+//
+//		}
+//		
+//	}
+//}
+
+
 UAction* UActionBuilder::CreateAction(EActionType type, AActor* affectedObject, float duration)
 {
 	UAction* newAction = nullptr;
@@ -66,7 +104,7 @@ UAction_Fade* UActionBuilder::CreateFadeAction(AActor* affectedObject, float sta
 	return newFade;
 }
 
-UAction_Rotate* UActionBuilder::CreateRotateAction(AActor* affectedObject, FRotator startRotation, FRotator endRotation, float duration)
+UAction_Rotate* UActionBuilder::CreateRotateAction(AActor* affectedObject,FRotator endRotation, float duration)
 {
 	UAction_Rotate* newRotate = NewObject<UAction_Rotate>(this, RotateActionClass);
 	newRotate->Initialize(affectedObject, endRotation, duration);
@@ -82,10 +120,20 @@ UAction_Flip* UActionBuilder::CreateFlipAction(AActor* affectedObject, float dur
 	return newFlip;
 }
 
-UAction_Delay* UActionBuilder::CreateDelayAction(AActor* affectedObject, float preDelay, float Duration)
+UAction_Delay* UActionBuilder::CreateDelayAction(AActor* affectedObject, UAction* delayedAction,
+		float preDelay, float Duration)
 {
 	UAction_Delay* newDelay = NewObject<UAction_Delay>(this, DelayActionClass);
-	newDelay->Initialize(affectedObject, preDelay, Duration);
+	newDelay->Initialize(affectedObject, delayedAction, preDelay, Duration);
 	newDelay->Init();
 	return newDelay;
+}
+
+UAction_SpawnCard* UActionBuilder::CreateSpawnAction(int playerOwner, int cardValue
+, FRotator spawnRotation, FVector spawnLocation, float duration)
+{
+	UAction_SpawnCard* newSpawn = NewObject<UAction_SpawnCard>(this, SpawnActionClass);
+	newSpawn->Initialize(playerOwner, cardValue, spawnRotation, spawnLocation, duration);
+	newSpawn->Init();
+	return newSpawn;
 }
