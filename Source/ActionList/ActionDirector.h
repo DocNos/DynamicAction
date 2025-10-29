@@ -14,7 +14,18 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionStarted, UAction*, Action);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionCompleted, UAction*, Action);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSequenceCompleted, UAction*, Action);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnCard, UAction_SpawnCard*, SpawnAction);
 
+
+USTRUCT(BlueprintType)
+struct FSequence
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	TArray<UAction*> SequenceData;
+
+};
 
 UCLASS(Blueprintable)
 class ACTIONLIST_API UActionDirector : public UGameInstance, public FTickableGameObject
@@ -32,6 +43,8 @@ private:
 	UPROPERTY()
 	TArray<UAction*> QueuedActions_;
 
+	
+
 	UPROPERTY()
 	TMap<UAction*, int> DeleteMap_;
 
@@ -43,6 +56,16 @@ private:
 	
 
 public:
+	UPROPERTY(BlueprintReadWrite)
+	TMap<int, FSequence> Sequences_;
+	
+	UPROPERTY(BlueprintReadWrite)
+	int activeSequences_ = 0;
+
+
+	UFUNCTION(BlueprintCallable)
+	TArray<UAction*> NewSequence(int indexOwner, FSequence newSequence);
+
 	// Overrides
 	UFUNCTION(BlueprintCallable, Category = "Director")
 	virtual void Init() override;
@@ -69,6 +92,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
 	FOnSequenceCompleted OnSequenceCompleted;
+
+	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
+	FOnSpawnCard OnSpawnCard;
 
 	// Core functionality	
 	UFUNCTION(BlueprintCallable, Category = "Director|Actions",

@@ -3,6 +3,17 @@
 
 #include "ActionDirector.h"
 
+TArray<UAction*> UActionDirector::NewSequence(int indexOwner, FSequence newSequence)
+{
+	for (auto action : newSequence.SequenceData)
+	{
+		action->bIsSequence_ = true;
+	}
+	Sequences_[indexOwner] = newSequence;
+	++activeSequences_;
+	return TArray<UAction*>();
+}
+
 void UActionDirector::Init()
 {	
 	builder_ = NewObject<UActionBuilder>();	
@@ -31,14 +42,18 @@ void UActionDirector::Tick(float dt)
 			//if (currAction->IsBlocking()) return;
 			if (currAction->Update(dt))
 			{
-				currAction->SetActive(false);
 				currAction->SetDeleteFlag(true);
 				DeleteMap_.Add(currAction, i);
-				//DeleteList_.Add(currAction);
-				OnActionCompleted.Broadcast(currAction);
-				LogDebug(FString::Printf
-				(TEXT("Action of type %s completed. Index %d")
-				 , *UEnum::GetDisplayValueAsText(currAction->GetType()).ToString(), i));
+				if (!currAction->bIsSequence_)
+				{
+					currAction->SetActive(false);					
+					//DeleteList_.Add(currAction);
+					OnActionCompleted.Broadcast(currAction);
+					LogDebug(FString::Printf
+					(TEXT("Action of type %s completed. Index %d")
+					 , *UEnum::GetDisplayValueAsText(currAction->GetType()).ToString(), i));
+				}
+				
 			}
 		}
 	}
@@ -59,17 +74,26 @@ void UActionDirector::RemoveActive(UAction* action)
 
 void UActionDirector::ProcessQueue()
 {
-	if (QueuedActions_.Num() > 0)
+	if (activeSequences_ > 0)
 	{
-		UAction* next = QueuedActions_[0];
-		QueuedActions_.RemoveAt(0);
-		ExecuteAction(next);
-
-		if (QueuedActions_.Num() == 0)
+		for (int i = 0; i < activeSequences_; ++i)
 		{
-			OnSequenceCompleted.Broadcast(next);
-			LogDebug("Sequence Complete");
+			int len = Sequences_[i].SequenceData.Num();
+			if (len > 0)
+			{
+				TArray<UAction*> seq_ = Sequences_[i].SequenceData;
+				UAction* curr = seq_[0];
+				ExecuteAction(curr);
+				// need to move index once execute first item
+			}
+			else
+			{
+				// delete sequence
+			}
+			
+			
 		}
+		
 	}
 	
 }

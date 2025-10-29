@@ -45,6 +45,9 @@ private:
 public:
 		
 	UPROPERTY(BlueprintReadWrite)
+	bool bIsSequence_ = false;
+
+	UPROPERTY(BlueprintReadWrite)
 	bool bIsBlocking_ = false;
 
 	UPROPERTY(BlueprintAssignable)
@@ -102,6 +105,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual bool IsActive() const {return bActionActive_;}
+
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	virtual bool IsDone() const { return actionCurrTime_ >= actionDuration_; }
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual void SetActive(bool _active) { bActionActive_ = _active; }

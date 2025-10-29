@@ -79,6 +79,7 @@ UAction* UActionBuilder::CreateAction(EActionType type, AActor* affectedObject, 
 		case(EActionType::Move): newAction = NewObject<UAction_Move>(this);
 		break;
 
+
 		default: return nullptr;
 	}
 
