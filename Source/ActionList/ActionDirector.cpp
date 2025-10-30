@@ -15,14 +15,19 @@ void UActionDirector::Shutdown()
 {
 	StopAllActions();
 	ActiveActions_.Empty();
-	QueuedActions_.Empty();
 	Super::Shutdown();
 }
 
 void UActionDirector::Tick(float dt)
+{	
+	if(!DirectorClass) return;
+	ProcessQueue();
+	ProcessActive(dt);
+	OnDirectorTick.Broadcast(dt);
+}
+
+void UActionDirector::ProcessActive(float dt)
 {
-	
-	//Super::Tick(dt);
 	for (int32 i = ActiveActions_.Num() - 1; i >= 0; --i)
 	{
 		UAction* currAction = ActiveActions_[i];
@@ -33,60 +38,65 @@ void UActionDirector::Tick(float dt)
 			{
 				currAction->SetDeleteFlag(true);
 				DeleteMap_.Add(currAction, i);
-				if (!currAction->bIsSequence_)
-				{
-					currAction->SetActive(false);					
-					//DeleteList_.Add(currAction);
-					OnActionCompleted.Broadcast(currAction);
-					LogDebug(FString::Printf
-					(TEXT("Action of type %s completed. Index %d")
-					 , *UEnum::GetDisplayValueAsText(currAction->GetType()).ToString(), i));
-				}
-				
+				currAction->SetActive(false);
+				OnActionCompleted.Broadcast(currAction);
 			}
 		}
 	}
-	//ProcessDelete();
-	ProcessQueue();
-	OnDirectorTick.Broadcast(dt);
-}
-
-TArray<UAction*> UActionDirector::NewSequence(int indexOwner, FSequence newSequence)
-{
-	for (auto action : newSequence.SequenceData)
-	{
-		action->bIsSequence_ = true;
-	}
-	Sequences_[indexOwner] = newSequence;
-	++activeSequences_;
-	return newSequence.SequenceData;
 }
 
 void UActionDirector::ProcessQueue()
 {
-	if (activeSequences_ > 0)
+
+	TArray<int> CompleteSequences;
+
+	for (int32 currID = 0; currID < Sequences_.Num(); ++currID)
 	{
-		for (int i = 0; i < activeSequences_; ++i)
+		// int currID = sequencePair.Key;
+		FSequence& currSeq = Sequences_[currID];
+		if(currSeq.bIsDone) continue;
+
+		if (currSeq.currActive >= currSeq.SequenceData.Num())
 		{
-			int len = Sequences_[i].SequenceData.Num();
-			if (len > 0)
-			{
-				TArray<UAction*> seq_ = Sequences_[i].SequenceData;
-				UAction* curr = seq_[0];
-				ExecuteAction(curr);
-				// need to move index once execute first item
-			}
-			else
-			{
-				// delete sequence
-			}
-			
-			
+			currSeq.bIsDone = true;
+			CompleteSequences.Add(currID);
+			OnSequenceCompleted.Broadcast(currSeq);
+			continue;
 		}
 		
+		UAction* currAction = currSeq.SequenceData[currSeq.currActive];
+		if(!currAction) { ++currSeq.currActive; continue; }
+
+		if(!currAction->IsActive()) ExecuteAction(currAction);
+
+		if (currAction->IsDone())
+		{
+			++currSeq.currActive;
+
+			int32 activeIndex = ActiveActions_.Find(currAction);
+			if(activeIndex != INDEX_NONE) ActiveActions_.RemoveAt(activeIndex);
+		}
 	}
+	for (int i : CompleteSequences)
+	{
+		Sequences_.RemoveAt(i);		
+	}
+	activeSequences_ = Sequences_.Num();
 	
 }
+
+void UActionDirector::NewSequence(int indexOwner, TArray<UAction*> newSequence)
+{
+	for (auto action : newSequence)
+	{
+		action->bIsSequence_ = true;
+	}
+	FSequence newSeq = {newSequence, 0, false, indexOwner};
+	Sequences_.Add(newSeq);
+	++activeSequences_;
+	//return newSeq;
+}
+
 
 void UActionDirector::ExecuteAction(UAction* Action)
 {

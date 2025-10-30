@@ -78,10 +78,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
 	virtual bool IsBlocking(){ return bIsBlocking_; }
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
+	virtual EActionType GetType() { return actionType_; }
+
 	virtual void SetType(EActionType type) { actionType_ = type; }
 
-	UFUNCTION(BlueprintCallable)
-	virtual EActionType GetType() { return actionType_; }
+	
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual void Execute() PURE_VIRTUAL(UAction::Execute, );

@@ -10,11 +10,6 @@
 #include "ActionDirector.generated.h"
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionStarted, UAction*, Action);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionCompleted, UAction*, Action);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSequenceCompleted, UAction*, Action);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnCard, UAction_SpawnCard*, SpawnAction);
 
 
 USTRUCT(BlueprintType)
@@ -24,16 +19,28 @@ struct FSequence
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
 	TArray<UAction*> SequenceData;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	int currActive = 0;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	bool bIsDone = false;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	int32 sequenceOwner;
 };
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionStarted, UAction*, Action);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionCompleted, UAction*, Action);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSequenceCompleted, FSequence&, Sequence);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnCard, UAction_SpawnCard*, SpawnAction);
 
 UCLASS(Blueprintable)
 class ACTIONLIST_API UActionDirector : public UGameInstance, public FTickableGameObject
 {
 	GENERATED_BODY()
 private:
-	//UPROPERTY()
-	//TArray<UAction*> ActionHistory_;
+	
 	UPROPERTY()
 	UActionBuilder* builder_;
 
@@ -109,12 +116,22 @@ public:
 
 	}
 
+	UFUNCTION(BlueprintCallable, Category = "Director")
+	void SetDirectorClass(TSubclassOf<UActionDirector> directorClass) { DirectorClass = directorClass; }
+
+	UPROPERTY(EditAnywhere, Category = "Director")
+	TSubclassOf<UActionDirector> DirectorClass;
 	
 
 	// Core functionality ---------------------------------------------------
-	UFUNCTION(BlueprintCallable, Category = "Director|Actions",
+	UFUNCTION(BlueprintCallable, Category = "Director|Core",
 			  meta = (ToolTip = "Execute an action immediately"))
 	void ExecuteAction(UAction* Action);	
+
+	UFUNCTION(BlueprintCallable, Category = "Director|Core")
+	void ProcessActive(float dt);
+	
+	void ProcessQueue();
 
 	// Action Control ------------------------------------------------------
 	UFUNCTION(BlueprintCallable, Category = "Director|Control"
@@ -131,10 +148,10 @@ public:
 	
 	// Sequencing ---------------------------------------------------------
 	UFUNCTION(BlueprintCallable)
-	TArray<UAction*> NewSequence(int indexOwner, FSequence newSequence);
+	void NewSequence(int indexOwner, TArray<UAction*> newSequence);
 
 	UPROPERTY(BlueprintReadWrite)
-	TMap<int, FSequence> Sequences_;
+	TArray<FSequence> Sequences_;
 
 	UPROPERTY(BlueprintReadWrite)
 	int activeSequences_ = 0;
@@ -172,7 +189,7 @@ protected:
 			UE_LOG(LogTemp, Error, TEXT("ActionDirector: %s"), *Message);
 		}
 	}
-	void ProcessQueue();
+	
 
 };
 	//UPROPERTY()
