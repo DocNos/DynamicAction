@@ -41,11 +41,6 @@ private:
 	TArray<UAction*> ActiveActions_;
 
 	UPROPERTY()
-	TArray<UAction*> QueuedActions_;
-
-	
-
-	UPROPERTY()
 	TMap<UAction*, int> DeleteMap_;
 
 	UPROPERTY()
@@ -56,30 +51,6 @@ private:
 	
 
 public:
-	UPROPERTY(BlueprintReadWrite)
-	TMap<int, FSequence> Sequences_;
-	
-	UPROPERTY(BlueprintReadWrite)
-	int activeSequences_ = 0;
-
-
-	UFUNCTION(BlueprintCallable)
-	TArray<UAction*> NewSequence(int indexOwner, FSequence newSequence);
-
-	// Overrides
-	UFUNCTION(BlueprintCallable, Category = "Director")
-	virtual void Init() override;
-	virtual void Shutdown() override;
-
-	virtual bool IsTickable() const {return true;}
-	UFUNCTION(BlueprintCallable, Category = "Director")
-	virtual void Tick(float DeltaTime) override;
-	virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UActionDirector, STATGROUP_Tickables); }
-	
-	UFUNCTION(BlueprintCallable, BlueprintPure
-	, Category = "Gettor")
-	UActionBuilder* getBuilder() { return builder_;}
-
 	// Events
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
 	FOnDirectorTick OnDirectorTick;
@@ -96,30 +67,56 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
 	FOnSpawnCard OnSpawnCard;
 
-	// Core functionality	
+public:	
+	// Overrides ---------------------------------------------------------
+	UFUNCTION(BlueprintCallable, Category = "Director")
+	virtual void Init() override;
+	virtual void Shutdown() override;
+	virtual bool IsTickable() const {return true;}
+	virtual TStatId GetStatId() const override { RETURN_QUICK_DECLARE_CYCLE_STAT(UActionDirector, STATGROUP_Tickables); }
+
+	UFUNCTION(BlueprintCallable, Category = "Director")
+	virtual void Tick(float DeltaTime) override;
+	
+	UFUNCTION(BlueprintCallable, BlueprintPure
+	, Category = "Gettor")
+	UActionBuilder* 
+	GetBuilder() { return builder_;}
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director",
+			  meta = (DisplayName = "Get Action Director", WorldContext = "WorldContextObject"))
+	static UActionDirector* 
+	GetDirector(const UObject* WorldContextObject)	
+	{
+		if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject,
+															   EGetWorldErrorMode::LogAndReturnNull))
+		{
+			return Cast<UActionDirector>(World->GetGameInstance());
+		}
+		return nullptr;
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "Director")
+	void SetDebugging(bool _doDebug)
+	{
+		bDebugLogging_ = _doDebug;
+		if (_doDebug)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Global Debugging Enabled"));
+		}
+		else
+			UE_LOG(LogTemp, Log, TEXT("Global Debugging Disabled"));
+
+	}
+
+	
+
+	// Core functionality ---------------------------------------------------
 	UFUNCTION(BlueprintCallable, Category = "Director|Actions",
 			  meta = (ToolTip = "Execute an action immediately"))
-	void ExecuteAction(UAction* Action);
+	void ExecuteAction(UAction* Action);	
 
-	UFUNCTION(BlueprintCallable, Category="Director|Actions")
-	bool IsObjectBlocked(AActor* object) const;
-
-	UFUNCTION(BlueprintCallable, Category = "Director|Actions",
-			  meta = (ToolTip = "Add an action to execute after current queue"))
-	void QueueAction(UAction* action);
-
-	UFUNCTION(BlueprintCallable, Category = "Director|Actions"
-			, meta = (ToolTip = "Execute a series simultaneously"))
-	void ExecuteSimultaneous(const TArray<UAction*>& actions);
-
-	UFUNCTION(BlueprintCallable, Category = "Director|Actions"
-			, meta = (ToolTip = "Create a new sequence of actions"))
-	void ExecuteSequence(const TArray<UAction*>& sequence);
-
-	// Sequence control - TODO grouping
-
-	//TArray<UAction*> CreateActionSequence()
-
+	// Action Control ------------------------------------------------------
 	UFUNCTION(BlueprintCallable, Category = "Director|Control"
 			, meta = (ToolTip = "Stop an action and remove it from the sequence"))
 	void StopAction(UAction* Action);
@@ -131,40 +128,73 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Director|Control")
 	void RemoveActive(UAction* action);
 
-	// Query functions
+	
+	// Sequencing ---------------------------------------------------------
+	UFUNCTION(BlueprintCallable)
+	TArray<UAction*> NewSequence(int indexOwner, FSequence newSequence);
+
+	UPROPERTY(BlueprintReadWrite)
+	TMap<int, FSequence> Sequences_;
+
+	UPROPERTY(BlueprintReadWrite)
+	int activeSequences_ = 0;
+
+
+	// Query functions ----------------------------------------------------
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Director|Query")
 	TArray<UAction*> GetDeletes() {return DeleteList_;}
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Director|Query")
-	TArray<UAction*> GetActiveActions() {return ActiveActions_;}
-
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query")
-	TArray<UAction*> GetQueuedActions() { return QueuedActions_; }
-
+	TArray<UAction*> GetActiveActions() {return ActiveActions_;}	
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query"
 	, meta = (ToolTip = "Check for currently active actions"))
-	bool HasActiveActions() const;
-	
+	bool HasActiveActions() const
+	{
+		for (UAction* action : ActiveActions_)
+		{
+			if (action->IsActive()) return true;
+		}
+		return false;
+	}
 
-	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director",
-			  meta = (DisplayName = "Get Action Director", WorldContext = "WorldContextObject"))
-	static UActionDirector* GetDirector
-	(const UObject* WorldContextObject);
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Actions")
+	bool IsObjectBlocked(AActor* object) const;	
 
-	UFUNCTION(BlueprintCallable, Category = "Director")
-	void SetDebugging(bool _doDebug);
-
-	UFUNCTION(BlueprintCallable, Category = "Director")
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director")
 	bool isDebugging() const { return bDebugLogging_; }
 
-	
-
 protected:
-	void LogDebug(const FString& Message) const;
+	void LogDebug(const FString& Message) const
+	{
+		if (bDebugLogging_)
+		{
+			UE_LOG(LogTemp, Error, TEXT("ActionDirector: %s"), *Message);
+		}
+	}
 	void ProcessQueue();
 
 };
+	//UPROPERTY()
+	//TArray<UAction*> QueuedActions_;
+
+	//UFUNCTION(BlueprintCallable, Category = "Director|Actions"
+	//		  , meta = (ToolTip = "Execute a series simultaneously"))
+	//void ExecuteSimultaneous(const TArray<UAction*>& actions);
+	//
+	//UFUNCTION(BlueprintCallable, Category = "Director|Actions"
+	//		  , meta = (ToolTip = "Create a new sequence of actions"))
+	//void ExecuteSequence(const TArray<UAction*>& sequence);
+
+
+	//UFUNCTION(BlueprintCallable, Category = "Director|Actions",
+	//		  meta = (ToolTip = "Add an action to execute after current queue"))
+	//void QueueAction(UAction* action);
+	// Sequence control - TODO grouping
+
+	//UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Director|Query")
+	//TArray<UAction*> GetQueuedActions() { return QueuedActions_; }
+
 	//UFUNCTION(BlueprintCallable, Category = "Director|Control"
 	//		, meta = (ToolTip = "Pause a specific action for specified time"))
 	//void PauseAction(UAction* action, float pauseTime);

@@ -3,17 +3,6 @@
 
 #include "ActionDirector.h"
 
-TArray<UAction*> UActionDirector::NewSequence(int indexOwner, FSequence newSequence)
-{
-	for (auto action : newSequence.SequenceData)
-	{
-		action->bIsSequence_ = true;
-	}
-	Sequences_[indexOwner] = newSequence;
-	++activeSequences_;
-	return TArray<UAction*>();
-}
-
 void UActionDirector::Init()
 {	
 	builder_ = NewObject<UActionBuilder>();	
@@ -62,14 +51,15 @@ void UActionDirector::Tick(float dt)
 	OnDirectorTick.Broadcast(dt);
 }
 
-void UActionDirector::RemoveActive(UAction* action)
+TArray<UAction*> UActionDirector::NewSequence(int indexOwner, FSequence newSequence)
 {
-	//if(DeleteList_.IsEmpty()) return;
-	if (action->DoDelete())
+	for (auto action : newSequence.SequenceData)
 	{
-		ActiveActions_.RemoveAt(DeleteMap_[action]);
+		action->bIsSequence_ = true;
 	}
-	
+	Sequences_[indexOwner] = newSequence;
+	++activeSequences_;
+	return newSequence.SequenceData;
 }
 
 void UActionDirector::ProcessQueue()
@@ -107,8 +97,6 @@ void UActionDirector::ExecuteAction(UAction* Action)
 	}
 	if (IsObjectBlocked(Action->affectedObject_) && !Action->IsBlocking())
 	{
-		// Queue it instead of executing
-		QueueAction(Action);
 		LogDebug(FString::Printf(TEXT("%s blocked, queuing action of type %s") 
 				, Action->affectedObject_, 
 				*UEnum::GetDisplayValueAsText(Action->GetType()).ToString()));
@@ -125,6 +113,16 @@ void UActionDirector::ExecuteAction(UAction* Action)
 							,Action->actionDuration_));
 }
 
+void UActionDirector::RemoveActive(UAction* action)
+{
+	//if(DeleteList_.IsEmpty()) return;
+	if (action->DoDelete())
+	{
+		ActiveActions_.RemoveAt(DeleteMap_[action]);
+	}
+	
+}
+
 bool UActionDirector::IsObjectBlocked(AActor* object) const
 {
 	for (UAction* Action : ActiveActions_)
@@ -136,55 +134,6 @@ bool UActionDirector::IsObjectBlocked(AActor* object) const
 		}
 	}
 	return false;
-}
-
-void UActionDirector::QueueAction(UAction* action)
-{
-	if (!action)
-	{
-		LogDebug("Action cannot be queued");
-		return;
-	}
-	QueuedActions_.Add(action);
-	LogDebug( FString::Printf( TEXT("Queued action of type: %s"),
-							 *UEnum::GetDisplayValueAsText(action->GetType()).ToString()));
-}
-
-void UActionDirector::ExecuteSimultaneous(const TArray<UAction*>& Actions)
-{
-	int32 ExecutedCount = 0;
-
-	for (UAction* Action : Actions)
-	{
-		if (Action && !Action->IsBlocking())
-		{
-			Action->actionCurrTime_ = 0.0f;
-			Action->Execute();
-			Action->SetActive(true);
-			ActiveActions_.Add(Action);
-			OnActionStarted.Broadcast(Action);
-			ExecutedCount++;
-		}
-	}
-
-	LogDebug(FString::Printf(TEXT("Started %d simultaneous actions"), ExecutedCount));
-}
-
-void UActionDirector::ExecuteSequence(const TArray<UAction*>& actions)
-{
-	if(actions.Num() == 0) return;
-	if (actions[0])
-	{
-		ExecuteAction(actions[0]);
-	}
-	for (int32 i = 1; i < actions.Num(); ++i)
-	{
-		if (actions[i])
-		{
-			QueueAction(actions[i]);
-		}
-	}
-	LogDebug(FString::Printf(TEXT("Started new sequence of %d actions"), actions.Num()));
 }
 
 void UActionDirector::StopAction(UAction* Action)
@@ -209,60 +158,59 @@ void UActionDirector::StopAllActions()
 		}
 		
 	}
-	for (UAction* action : QueuedActions_)
-	{
-		if (action)
-		{
-			StopAction(action);
-			action->SetDeleteFlag(true);
-		}
-	}
-
-	//ActiveActions_.Empty();
-	//QueuedActions.Empty();
-
 	LogDebug("Stopped all actions");
 }
 
+// void UActionDirector::ExecuteSimultaneous(const TArray<UAction*>& Actions)
+// {
+// 	int32 ExecutedCount = 0;
+// 
+// 	for (UAction* Action : Actions)
+// 	{
+// 		if (Action && !Action->IsBlocking())
+// 		{
+// 			Action->actionCurrTime_ = 0.0f;
+// 			Action->Execute();
+// 			Action->SetActive(true);
+// 			ActiveActions_.Add(Action);
+// 			OnActionStarted.Broadcast(Action);
+// 			ExecutedCount++;
+// 		}
+// 	}
+// 
+// 	LogDebug(FString::Printf(TEXT("Started %d simultaneous actions"), ExecutedCount));
+// }
 
 
-bool UActionDirector::HasActiveActions() const
-{
-	for (UAction* action : ActiveActions_)
-	{
-		if(action->IsActive()) return true;
-	}
-	return false;
-}
+//void UActionDirector::ExecuteSequence(const TArray<UAction*>& actions)
+//{
+//	if(actions.Num() == 0) return;
+//	if (actions[0])
+//	{
+//		ExecuteAction(actions[0]);
+//	}
+//	for (int32 i = 1; i < actions.Num(); ++i)
+//	{
+//		if (actions[i])
+//		{
+//			QueueAction(actions[i]);
+//		}
+//	}
+//	LogDebug(FString::Printf(TEXT("Started new sequence of %d actions"), actions.Num()));
+//}
 
-UActionDirector* UActionDirector::GetDirector(const UObject* WorldContextObject)
-{
-	if (UWorld* World = GEngine->GetWorldFromContextObject(WorldContextObject,
-														   EGetWorldErrorMode::LogAndReturnNull))
-	{
-		return Cast<UActionDirector>(World->GetGameInstance());
-	}
-	return nullptr;
-}
+//void UActionDirector::QueueAction(UAction* action)
+//{
+//	if (!action)
+//	{
+//		LogDebug("Action cannot be queued");
+//		return;
+//	}
+//	QueuedActions_.Add(action);
+//	LogDebug( FString::Printf( TEXT("Queued action of type: %s"),
+//							 *UEnum::GetDisplayValueAsText(action->GetType()).ToString()));
+//}
 
-void UActionDirector::SetDebugging(bool _doDebug)
-{
-	bDebugLogging_ = _doDebug;
-	if (_doDebug)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Global Debugging Enabled"));
-	}else
-		UE_LOG(LogTemp, Log, TEXT("Global Debugging Disabled"));
-	
-}
-
-void UActionDirector::LogDebug(const FString& Message) const
-{
-	if (bDebugLogging_)
-	{
-		UE_LOG(LogTemp, Error, TEXT("ActionDirector: %s"), *Message);
-	}
-}
 
 //UActionGroup* UActionDirector::CreateGroup(const FString& GroupName)
 //{
