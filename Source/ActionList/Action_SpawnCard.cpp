@@ -5,6 +5,7 @@
 
 void UAction_SpawnCard::Execute()
 {
+	OnActionExecute.Broadcast();
 }
 
 bool UAction_SpawnCard::Update(float _dt)

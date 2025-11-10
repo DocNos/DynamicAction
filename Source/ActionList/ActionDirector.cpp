@@ -56,6 +56,7 @@ void UActionDirector::ProcessQueue()
 		FSequence& currSeq = Sequences_[currID];
 		if(currSeq.bIsDone) continue;
 
+		// Check if sequence is complete
 		if (currSeq.currActive >= currSeq.SequenceData.Num())
 		{
 			currSeq.bIsDone = true;
@@ -64,6 +65,7 @@ void UActionDirector::ProcessQueue()
 			continue;
 		}
 		
+		// Current action of current sequence
 		UAction* currAction = currSeq.SequenceData[currSeq.currActive];
 		if(!currAction) { ++currSeq.currActive; continue; }
 
@@ -114,10 +116,10 @@ void UActionDirector::ExecuteAction(UAction* Action)
 	}
 	Action->actionCurrTime_ = 0.f;
 	Action->SetActive(true);
+	OnActionStarted.Broadcast(Action);
 	Action->Execute();
 
 	ActiveActions_.Add(Action);
-	OnActionStarted.Broadcast(Action);
 	LogDebug(FString::Printf(TEXT("Started execution of type %s: Duration: %.2f"),
 							 *UEnum::GetDisplayValueAsText(Action->GetType()).ToString()
 							,Action->actionDuration_));
@@ -129,6 +131,8 @@ void UActionDirector::RemoveActive(UAction* action)
 	if (action->DoDelete())
 	{
 		ActiveActions_.RemoveAt(DeleteMap_[action]);
+		LogDebug_Red(FString::Printf(TEXT("Finished action") ) ); // %s"),
+						//		 action->GetOuter()->GetFName()));
 	}
 	
 }

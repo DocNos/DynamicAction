@@ -22,6 +22,7 @@ enum class EActionType : uint8
  */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionUpdate, float, deltaTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnActionInit);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnActionExecute);
 
 UCLASS(Abstract, Blueprintable) // Abstract base class.
 class ACTIONLIST_API UAction : public UObject
@@ -50,11 +51,14 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsBlocking_ = false;
 
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnActionUpdate OnActionUpdate;
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnActionInit OnActionInit;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnActionExecute OnActionExecute;
 	
 	UPROPERTY(BlueprintReadWrite)
 	float actionDuration_;

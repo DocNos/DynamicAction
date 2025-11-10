@@ -10,7 +10,7 @@
 #include "ActionDirector.generated.h"
 
 
-
+// DECLARE_LOG_CATEGORY_EXTERN(Starting, Warning)
 
 USTRUCT(BlueprintType)
 struct FSequence
@@ -186,7 +186,14 @@ protected:
 	{
 		if (bDebugLogging_)
 		{
-			UE_LOG(LogTemp, Error, TEXT("ActionDirector: %s"), *Message);
+			UE_LOG(LogTemp, Display, TEXT("ActionDirector: %s"), *Message);
+		}
+	}
+	void LogDebug_Red(const FString& Message) const
+	{
+		if (bDebugLogging_)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ActionDirector: %s"), *Message);
 		}
 	}
 	
