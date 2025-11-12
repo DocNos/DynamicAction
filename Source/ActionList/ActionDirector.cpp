@@ -36,9 +36,10 @@ void UActionDirector::ProcessActive(float dt)
 			//if (currAction->IsBlocking()) return;
 			if (currAction->Update(dt))
 			{
+				currAction->SetDone(true);
 				currAction->SetDeleteFlag(true);
 				DeleteMap_.Add(currAction, i);
-				currAction->SetActive(false);
+				//currAction->SetActive(false);
 				OnActionCompleted.Broadcast(currAction);
 			}
 		}
@@ -69,16 +70,13 @@ void UActionDirector::ProcessQueue()
 		UAction* currAction = currSeq.SequenceData[currSeq.currActive];
 		if(!currAction) { ++currSeq.currActive; continue; }
 
-		if(!currAction->IsActive()) ExecuteAction(currAction);
-
-		if (currAction->IsDone())
+		if(!currAction->IsActive() && !currAction->DoDelete()) 
 		{
-			++currSeq.currActive;
-
-			int32 activeIndex = ActiveActions_.Find(currAction);
-			if(activeIndex != INDEX_NONE) ActiveActions_.RemoveAt(activeIndex);
-		}
+			ExecuteAction(currAction);
+		}		
+		if (currAction->IsDone()) { ++currSeq.currActive; }
 	}
+	
 	for (int i : CompleteSequences)
 	{
 		Sequences_.RemoveAt(i);		
@@ -87,13 +85,14 @@ void UActionDirector::ProcessQueue()
 	
 }
 
-void UActionDirector::NewSequence(int indexOwner, TArray<UAction*> newSequence)
+void UActionDirector::NewSequence(int indexOwner, TArray<UAction*> newSequence
+, FString _sequenceName)
 {
 	for (auto action : newSequence)
 	{
 		action->bIsSequence_ = true;
 	}
-	FSequence newSeq = {newSequence, 0, false, indexOwner};
+	FSequence newSeq = {newSequence, 0, false, indexOwner, _sequenceName};
 	Sequences_.Add(newSeq);
 	++activeSequences_;
 	//return newSeq;
@@ -131,6 +130,7 @@ void UActionDirector::RemoveActive(UAction* action)
 	if (action->DoDelete())
 	{
 		ActiveActions_.RemoveAt(DeleteMap_[action]);
+		action->SetActive(false);
 		LogDebug_Red(FString::Printf(TEXT("Finished action") ) ); // %s"),
 						//		 action->GetOuter()->GetFName()));
 	}

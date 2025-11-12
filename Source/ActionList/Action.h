@@ -35,31 +35,15 @@ private:
 	UPROPERTY()
 	EActionType actionType_ = EActionType::DEFAULT;
 
-	
-
-	//UPROPERTY()
-	//float blockTime = 0.f;
+	UPROPERTY()
+	bool bIsDone_ = false;
 
 	UPROPERTY()
 	bool bDoDelete_ = false;
 
-public:
-		
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsSequence_ = false;
 
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsBlocking_ = false;
-
-	UPROPERTY(BlueprintAssignable, BlueprintCallable)
-	FOnActionUpdate OnActionUpdate;
-
-	UPROPERTY(BlueprintAssignable, BlueprintCallable)
-	FOnActionInit OnActionInit;
-
-	UPROPERTY(BlueprintAssignable, BlueprintCallable)
-	FOnActionExecute OnActionExecute;
-	
+public:		
+//------------Universal
 	UPROPERTY(BlueprintReadWrite)
 	float actionDuration_;
 	
@@ -68,30 +52,59 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	float actionCurrTime_;	
-
-	UFUNCTION(BlueprintImplementableEvent, Category = "Action")
-	void BindDelegates();
 	
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsSequence_ = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsBlocking_ = false;
+
+//------------Events
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnActionUpdate OnActionUpdate;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnActionInit OnActionInit;
+
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnActionExecute OnActionExecute;
+
+//------------Core	
+
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual void Init()
 	{		
-		BindDelegates();
-		//OnActionInit.Broadcast();		
+		BindDelegates();	
 	}	
-		
+	
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	virtual void Execute() PURE_VIRTUAL(UAction::Execute, );
+	
+	UFUNCTION(BlueprintImplementableEvent, Category = "Action")
+	void BindDelegates();
+
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	virtual bool Update(float _dt) {return true;}
+
+//------------Setter	
+	virtual void SetType(EActionType type) { actionType_ = type; }	
+
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	virtual void SetDeleteFlag(bool flag) { bDoDelete_ = flag; }
+
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	virtual void SetActive(bool _active) { bActionActive_ = _active; }
+
+	UFUNCTION(BlueprintCallable, Category = "Action")
+	virtual void SetDone(bool _isDone) { bIsDone_ = _isDone; }
+
+//------------Gettor	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
 	virtual bool IsBlocking(){ return bIsBlocking_; }
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
 	virtual EActionType GetType() { return actionType_; }
 
-	virtual void SetType(EActionType type) { actionType_ = type; }
-
-	
-
-	UFUNCTION(BlueprintCallable, Category = "Action")
-	virtual void Execute() PURE_VIRTUAL(UAction::Execute, );
-	
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Action")
 	virtual bool CanExecute() const 
 	{ 
@@ -99,24 +112,20 @@ public:
 			&& !bDoDelete_ 
 			&& (affectedObject_ == nullptr); 
 	}
-	
-	UFUNCTION(BlueprintCallable, Category = "Action")
-	virtual bool Update(float _dt) {return true;}
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual bool DoDelete() {return bDoDelete_; }
-
-	UFUNCTION(BlueprintCallable, Category = "Action")
-	virtual void SetDeleteFlag(bool flag) { bDoDelete_ = flag; }
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual bool IsActive() const {return bActionActive_;}
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
-	virtual bool IsDone() const { return actionCurrTime_ >= actionDuration_; }
+	virtual bool IsDone() const { return bIsDone_; }
+	
 
-	UFUNCTION(BlueprintCallable, Category = "Action")
-	virtual void SetActive(bool _active) { bActionActive_ = _active; }
+
+
+
 
 	
 

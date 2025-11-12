@@ -17,21 +17,25 @@ struct FSequence
 {
 	GENERATED_BODY()
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Sequence")
 	TArray<UAction*> SequenceData;
 	
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Sequence")
 	int currActive = 0;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Sequence")
 	bool bIsDone = false;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "2D Sequence Array")
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Sequence")
 	int32 sequenceOwner;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Sequence")
+	FString sequenceName_;
+
 };
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionStarted, UAction*, Action);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionCompleted, UAction*, Action);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSequenceCompleted, FSequence&, Sequence);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSequenceCompleted,const FSequence&, Sequence);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnCard, UAction_SpawnCard*, SpawnAction);
 
@@ -148,7 +152,7 @@ public:
 	
 	// Sequencing ---------------------------------------------------------
 	UFUNCTION(BlueprintCallable)
-	void NewSequence(int indexOwner, TArray<UAction*> newSequence);
+	void NewSequence(int indexOwner, TArray<UAction*> newSequence, FString _sequenceName);
 
 	UPROPERTY(BlueprintReadWrite)
 	TArray<FSequence> Sequences_;
