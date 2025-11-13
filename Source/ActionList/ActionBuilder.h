@@ -10,6 +10,7 @@
 #include "Action_Flip.h"
 #include "Action_Delay.h"
 #include "Action_SpawnCard.h"
+#include "Action_Await.h"
 #include "Components/ActorComponent.h"
 #include "Engine/DataTable.h"
 #include "ActionBuilder.generated.h"
@@ -62,6 +63,9 @@ public:
 	UAction_SpawnCard* CreateSpawnAction(int playerOwner, int cardValue, FRotator spawnRotation,
 						FVector spawnLocation, float duration);
 
+	UFUNCTION(BlueprintCallable, Category = "Action Builder")
+	UAction_Await* CreateAwaitAction(UAction* awaitedAction);
+
 	UFUNCTION(BlueprintCallable, Category="Action Builder")
 	void SetMoveClass(TSubclassOf<UAction_Move> moveClass) { MoveActionClass = moveClass;}
 
@@ -97,6 +101,13 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Action Builder")
 	TSubclassOf<UAction_SpawnCard> SpawnActionClass;
+
+	UFUNCTION(BlueprintCallable, Category = "Action Builder")
+	void SetAwaitClass(TSubclassOf<UAction_Await> awaitClass) { AwaitActionClass = awaitClass; }
+
+	UPROPERTY(EditAnywhere, Category = "Action Builder")
+	TSubclassOf<UAction_Await> AwaitActionClass;
+
 
 	UPROPERTY(EditAnywhere, Category = "Action Builder")
 	float DefaultDuration = 1.0f;

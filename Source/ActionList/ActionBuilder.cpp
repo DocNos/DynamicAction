@@ -32,45 +32,6 @@ void UActionBuilder::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	// ...
 }
 
-
-//TArray<UAction*> UActionBuilder::CreateSequence(TArray<EActionType> actions, AActor* affectedObject
-//, FVector endPos, FRotator endRotation, float startOpacity, float endOpactiy, 
-//float duration, float predelay, float delay)
-//{
-//	TArray<UAction*> sequence;
-//	
-//	for (int i = 0; i < actions.Num(); ++i)
-//	{
-//		EActionType action = actions[i];
-//		switch (action) 
-//		{
-//			case(EActionType::Move): {
-//				sequence.Add(CreateMoveAction(affectedObject, endPos, duration));
-//			} break;
-//			case(EActionType::Rotate): {
-//				sequence.Add(CreateRotateAction(affectedObject, endRotation, duration));
-//			} break;
-//			case(EActionType::Flip): {
-//				sequence.Add(CreateFlipAction(affectedObject, duration));
-//			} break;
-//			case(EActionType::Fade): {
-//				sequence.Add(CreateFadeAction(affectedObject, startOpacity, endOpactiy, duration));
-//			} break;
-//			case(EActionType::Delay): {
-//				//EActionType next = (i+1 < actions.Num()) ? (actions[i+1]) : (actions[i]);
-//				//sequence.Add(CreateDelayAction(nullptr, ))
-//			} break;
-//			case(EActionType::SpawnCard): {
-//				sequence.Add(CreateSpawnAction())
-//			} break;
-//			default: continue;
-//
-//		}
-//		
-//	}
-//}
-
-
 UAction* UActionBuilder::CreateAction(EActionType type, AActor* affectedObject, float duration)
 {
 	UAction* newAction = nullptr;
@@ -137,4 +98,13 @@ UAction_SpawnCard* UActionBuilder::CreateSpawnAction(int playerOwner, int cardVa
 	newSpawn->Initialize(playerOwner, cardValue, spawnRotation, spawnLocation, duration);
 	newSpawn->Init();
 	return newSpawn;
+}
+
+UAction_Await* UActionBuilder::CreateAwaitAction(UAction* awaitedAction)
+{
+	UAction_Await* newAwait = NewObject<UAction_Await>(this, AwaitActionClass);
+	newAwait->Initialize(awaitedAction);
+	newAwait->Init();
+	return newAwait;
+
 }

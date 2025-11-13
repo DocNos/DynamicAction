@@ -30,7 +30,7 @@ public:
 	FRotator _endRotation, float Duration)
 	{
 		affectedObject_ = Target;
-		startRotation_ = affectedObject_->GetActorRotation();
+		//startRotation_ = affectedObject_->GetActorRotation();
 		endRotation_ = _endRotation;
 		actionDuration_ = Duration;
 		actionCurrTime_ = 0.0f;

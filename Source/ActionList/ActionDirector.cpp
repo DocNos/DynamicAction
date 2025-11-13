@@ -28,7 +28,7 @@ void UActionDirector::Tick(float dt)
 
 void UActionDirector::ProcessActive(float dt)
 {
-	for (int32 i = ActiveActions_.Num() - 1; i >= 0; --i)
+	for (int32 i = 0; i < ActiveActions_.Num(); ++i)
 	{
 		UAction* currAction = ActiveActions_[i];
 		if (currAction && currAction->IsActive())
@@ -77,10 +77,10 @@ void UActionDirector::ProcessQueue()
 		if (currAction->IsDone()) { ++currSeq.currActive; }
 	}
 	
-	for (int i : CompleteSequences)
-	{
-		Sequences_.RemoveAt(i);		
-	}
+	//for (int i : CompleteSequences)
+	//{
+	//	Sequences_.RemoveAt(i);		
+	//}
 	activeSequences_ = Sequences_.Num();
 	
 }

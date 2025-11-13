@@ -16,6 +16,7 @@ enum class EActionType : uint8
 	, Fade UMETA(DisplayName = "Fade")
 	, Delay UMETA(DisplayName = "Delay")
 	, SpawnCard UMETA(DisplayName = "SpawnCard")
+	, AwaitAction UMETA(DisplayName = "Await")
 };
 /**
  * 

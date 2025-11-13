@@ -5,7 +5,7 @@
 
 void UAction_Rotate::Execute()
 {
-	
+	startRotation_ = affectedObject_->GetActorRotation();
 }
 
 bool UAction_Rotate::Update(float _dt)
