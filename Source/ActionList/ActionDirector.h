@@ -9,13 +9,22 @@
 #include "Engine/GameInstance.h"
 #include "ActionDirector.generated.h"
 
-
-// DECLARE_LOG_CATEGORY_EXTERN(Starting, Warning)
+UENUM(BlueprintType)
+enum SeqType : uint8
+{
+	DEFAULT	UMETA(DisplayName = "DEFAULT")
+	, Sequential UMETA(DisplayName = "Sequential")
+	, Simultaneous UMETA(DisplayName = "Simultaneous")
+	, Blocking UMETA(DisplayName = "Blocking")
+};
 
 USTRUCT(BlueprintType)
 struct FSequence
 {
 	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, Category = "Sequence")
+	TEnumAsByte<SeqType> type;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Sequence")
 	TArray<UAction*> SequenceData;
@@ -31,6 +40,15 @@ struct FSequence
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Sequence")
 	FString sequenceName_;
+
+	bool operator==(const FSequence& other) const
+	{
+		return this->sequenceName_ == other.sequenceName_;
+	}
+	bool operator!=(const FSequence& other) const
+	{
+		return this->sequenceName_ != other.sequenceName_;
+	}
 
 };
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionStarted, UAction*, Action);
@@ -152,7 +170,17 @@ public:
 	
 	// Sequencing ---------------------------------------------------------
 	UFUNCTION(BlueprintCallable)
-	void NewSequence(int indexOwner, TArray<UAction*> newSequence, FString _sequenceName);
+	void NewSequence(int indexOwner, TArray<UAction*> newSequence
+	,SeqType type, FString _sequenceName);
+
+	UFUNCTION()
+	void ProcessSequence_Sequential(FSequence& sequence);
+
+	UFUNCTION()
+	void ProcessSequence_Simultaneous(FSequence& sequence);
+
+	UFUNCTION()
+	void ProcessSequence_Blocking(FSequence& sequence);
 
 	UPROPERTY(BlueprintReadWrite)
 	TArray<FSequence> Sequences_;

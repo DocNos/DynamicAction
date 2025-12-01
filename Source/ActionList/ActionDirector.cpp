@@ -49,50 +49,81 @@ void UActionDirector::ProcessActive(float dt)
 void UActionDirector::ProcessQueue()
 {
 
-	TArray<int> CompleteSequences;
+	TArray<FSequence> CompleteSequences;
 
 	for (int32 currID = 0; currID < Sequences_.Num(); ++currID)
 	{
-		// int currID = sequencePair.Key;
 		FSequence& currSeq = Sequences_[currID];
-		if(currSeq.bIsDone) continue;
-
-		// Check if sequence is complete
 		if (currSeq.currActive >= currSeq.SequenceData.Num())
 		{
 			currSeq.bIsDone = true;
-			CompleteSequences.Add(currID);
+			CompleteSequences.Add(currSeq);
 			OnSequenceCompleted.Broadcast(currSeq);
 			continue;
 		}
-		
-		// Current action of current sequence
-		UAction* currAction = currSeq.SequenceData[currSeq.currActive];
-		if(!currAction) { ++currSeq.currActive; continue; }
-
-		if(!currAction->IsActive() && !currAction->DoDelete()) 
+		if(currSeq.bIsDone) continue;
+		switch (currSeq.type)
 		{
-			ExecuteAction(currAction);
-		}		
-		if (currAction->IsDone()) { ++currSeq.currActive; }
+			case(SeqType::Sequential): ProcessSequence_Sequential(currSeq); break;
+			case(SeqType::Simultaneous): 
+			{
+				ProcessSequence_Simultaneous(currSeq); 
+				CompleteSequences.Add(currSeq);
+			}break;
+			case(SeqType::Blocking): ProcessSequence_Blocking(currSeq); break;
+			default: break;
+		}
+		
 	}
 	
-	//for (int i : CompleteSequences)
-	//{
-	//	Sequences_.RemoveAt(i);		
-	//}
+	for (auto seq : CompleteSequences)
+	{
+		int index = Sequences_.Find(seq);
+		Sequences_.RemoveAt(index);
+	}
 	activeSequences_ = Sequences_.Num();
 	
 }
 
-void UActionDirector::NewSequence(int indexOwner, TArray<UAction*> newSequence
-, FString _sequenceName)
+void UActionDirector::ProcessSequence_Sequential(FSequence& currSeq)
+{
+	// Current action of current sequence
+	UAction* currAction = currSeq.SequenceData[currSeq.currActive];
+	if (!currAction) { ++currSeq.currActive; return; }
+
+	if (!currAction->IsActive() && !currAction->DoDelete())
+	{
+		ExecuteAction(currAction);
+	}
+	if (currAction->IsDone()) { ++currSeq.currActive; }
+
+}
+
+void UActionDirector::ProcessSequence_Simultaneous(FSequence& sequence)
+{
+	for (auto action : sequence.SequenceData)
+	{
+		ExecuteAction(action);
+		++sequence.currActive;
+	}
+
+}
+
+void UActionDirector::ProcessSequence_Blocking(FSequence& currSeq)
+{
+	UAction* currAction = currSeq.SequenceData[currSeq.currActive];
+	
+
+}
+
+void UActionDirector::NewSequence
+(int indexOwner, TArray<UAction*> newSequence, SeqType type, FString _sequenceName)
 {
 	for (auto action : newSequence)
 	{
 		action->bIsSequence_ = true;
 	}
-	FSequence newSeq = {newSequence, 0, false, indexOwner, _sequenceName};
+	FSequence newSeq = {type, newSequence, 0, false, indexOwner, _sequenceName};
 	Sequences_.Add(newSeq);
 	++activeSequences_;
 	//return newSeq;
