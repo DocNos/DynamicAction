@@ -268,9 +268,10 @@ void UActionDirector::ExecuteShuffleSequence(UAction_Shuffle* ShuffleAction)
 }
 
 void UActionDirector::PerformCardShuffle(
-	const TArray<AActor*>& Cards,
-	int32 NumShuffles,
-	float ShuffleDuration)
+	const TArray<AActor*>& Cards
+	,int32 NumShuffles
+	,float ShuffleDuration
+	,float shuffleRadius)
 {
 	if (!builder_ || Cards.Num() == 0)
 	{
@@ -288,7 +289,7 @@ void UActionDirector::PerformCardShuffle(
 	{
 		// Create shuffle action using builder
 		float IterationDuration = ShuffleDuration / NumShuffles;
-		float SpreadRadius = 150.0f + (i * 50.0f); // Increase spread each iteration
+		float SpreadRadius = shuffleRadius + (i * 50.0f); // Increase spread each iteration
 
 		UAction_Shuffle* ShuffleAction = builder_->CreateShuffleAction(
 			CurrentCardOrder,
@@ -374,7 +375,7 @@ void UActionDirector::ExecuteDealSequence(UAction_Deal* DealAction)
 
 	// Execute to generate the deal sequence
 	DealAction->Execute();
-
+	
 	if (DealAction->DealtCards.Num() == 0) return;
 
 	TArray<UAction*> DealSequence;
@@ -474,6 +475,7 @@ void UActionDirector::DealCards(
 		DealSpeed
 	);
 
+	OnDirectorRef.Broadcast(DealAction);
 	// Set additional parameters
 	DealAction->DelayBetweenCards = 0.1f;
 	DealAction->bDealRoundRobin = true; // Deal one to each player in turn

@@ -70,7 +70,7 @@ void UAction_Deal::GenerateDealSequence()
 				CardDestinations.Add(CalculateCardPosition(PlayerIdx, Round));
 				PlayerAssignments.Add(PlayerIdx);
 				CardFlipStates.Add(PlayerHands[PlayerIdx].bFaceUp);
-
+				OnCardDealt.Broadcast(PlayerIdx, Cards[CardIndex]);
 				CardIndex++;
 			}
 		}

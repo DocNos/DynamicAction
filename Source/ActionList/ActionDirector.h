@@ -56,7 +56,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnActionCompleted, UAction*, Action
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSequenceCompleted,const FSequence&, Sequence);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnCard, UAction_SpawnCard*, SpawnAction);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam
+(FOnDirectorRef, UAction_Deal*, dealAction);
 UCLASS(Blueprintable)
 class ACTIONLIST_API UActionDirector : public UGameInstance, public FTickableGameObject
 {
@@ -95,6 +96,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
 	FOnSpawnCard OnSpawnCard;
+
+	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
+	FOnDirectorRef OnDirectorRef;
 
 public:	
 	// Overrides ---------------------------------------------------------
@@ -208,6 +212,7 @@ public:
 		const TArray<AActor*>& Cards,
 		int32 NumShuffles = 3,
 		float ShuffleDuration = 1.0f
+		, float shuffleRadius = 50.f
 	);
 
 

@@ -24,12 +24,20 @@ struct FPlayerHand
 	bool bFaceUp = false;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams
+(FOnCardDealt, int32, playerNum, AActor*, card);
+
+
 UCLASS(Blueprintable)
 class ACTIONLIST_API UAction_Deal : public UAction
 {
 	GENERATED_BODY()
 
 public:
+
+	UPROPERTY(BlueprintAssignable)
+	FOnCardDealt OnCardDealt;
+
 	// Input parameters
 	UPROPERTY(BlueprintReadWrite, Category = "Deal")
 	TArray<AActor*> Cards;
