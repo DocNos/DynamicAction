@@ -100,11 +100,30 @@ UAction_SpawnCard* UActionBuilder::CreateSpawnAction(int playerOwner, int cardVa
 	return newSpawn;
 }
 
-UAction_Await* UActionBuilder::CreateAwaitAction(UAction* awaitedAction)
+UAction_Shuffle* UActionBuilder::CreateShuffleAction(
+	const TArray<AActor*>& Cards,
+	FVector DeckPosition,
+	float SpreadRadius,
+	float Duration)
 {
-	UAction_Await* newAwait = NewObject<UAction_Await>(this, AwaitActionClass);
-	newAwait->Initialize(awaitedAction);
-	newAwait->Init();
-	return newAwait;
+	UAction_Shuffle* newShuffle = NewObject<UAction_Shuffle>(this, ShuffleActionClass);
+	newShuffle->Initialize(Cards, DeckPosition, SpreadRadius, Duration);
+	newShuffle->Init();
 
+	return newShuffle;
+}
+
+
+UAction_Deal* UActionBuilder::CreateDealAction(
+	const TArray<AActor*>& Cards,
+	const TArray<FPlayerHand>& PlayerHands,
+	int32 CardsPerPlayer,
+	FVector DeckPosition,
+	float DealSpeed)
+{
+	UAction_Deal* newDeal = NewObject<UAction_Deal>(this, DealActionClass);
+	newDeal->Initialize(Cards, PlayerHands, CardsPerPlayer, DeckPosition, DealSpeed);
+	newDeal->Init();
+
+	return newDeal;
 }

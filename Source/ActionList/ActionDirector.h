@@ -188,6 +188,28 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	int activeSequences_ = 0;
 
+	UFUNCTION(BlueprintCallable, Category = "Director|Shuffle")
+	void ExecuteShuffleSequence(UAction_Shuffle* ShuffleAction);
+
+	UFUNCTION(BlueprintCallable, Category = "Director|Deal")
+	void ExecuteDealSequence(UAction_Deal* DealAction);
+
+	UFUNCTION(BlueprintCallable, Category = "Director|Deal")
+	void DealCards(
+		const TArray<AActor*>& Cards,
+		const TArray<FVector>& PlayerPositions,
+		int32 CardsPerPlayer = 5,
+		bool bFaceUp = false,
+		float DealSpeed = 0.3f
+	);
+
+	UFUNCTION(BlueprintCallable, Category = "Director| Shuffle")
+	void PerformCardShuffle(
+		const TArray<AActor*>& Cards,
+		int32 NumShuffles = 3,
+		float ShuffleDuration = 1.0f
+	);
+
 
 	// Query functions ----------------------------------------------------
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Director|Query")

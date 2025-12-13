@@ -10,7 +10,8 @@
 #include "Action_Flip.h"
 #include "Action_Delay.h"
 #include "Action_SpawnCard.h"
-#include "Action_Await.h"
+#include "Action_Shuffle.h"
+#include "Action_Deal.h"
 #include "Components/ActorComponent.h"
 #include "Engine/DataTable.h"
 #include "ActionBuilder.generated.h"
@@ -64,7 +65,21 @@ public:
 						FVector spawnLocation, float duration);
 
 	UFUNCTION(BlueprintCallable, Category = "Action Builder")
-	UAction_Await* CreateAwaitAction(UAction* awaitedAction);
+	UAction_Shuffle* CreateShuffleAction(
+		const TArray<AActor*>& Cards,
+		FVector DeckPosition,
+		float SpreadRadius,
+		float Duration
+	);
+
+	UFUNCTION(BlueprintCallable, Category = "Action Builder")
+	UAction_Deal* CreateDealAction(
+		const TArray<AActor*>& Cards,
+		const TArray<FPlayerHand>& PlayerHands,
+		int32 CardsPerPlayer,
+		FVector DeckPosition,
+		float DealSpeed
+	);
 
 	UFUNCTION(BlueprintCallable, Category="Action Builder")
 	void SetMoveClass(TSubclassOf<UAction_Move> moveClass) { MoveActionClass = moveClass;}
@@ -103,11 +118,16 @@ public:
 	TSubclassOf<UAction_SpawnCard> SpawnActionClass;
 
 	UFUNCTION(BlueprintCallable, Category = "Action Builder")
-	void SetAwaitClass(TSubclassOf<UAction_Await> awaitClass) { AwaitActionClass = awaitClass; }
+	void SetShuffleClass(TSubclassOf<UAction_Shuffle> shuffleClass) { ShuffleActionClass = shuffleClass; }
 
 	UPROPERTY(EditAnywhere, Category = "Action Builder")
-	TSubclassOf<UAction_Await> AwaitActionClass;
+	TSubclassOf<UAction_Shuffle> ShuffleActionClass;
 
+	UFUNCTION(BlueprintCallable, Category = "Action Builder")
+	void SetDealClass(TSubclassOf<UAction_Deal> dealClass) { DealActionClass = dealClass; }
+
+	UPROPERTY(EditAnywhere, Category = "Action Builder")
+	TSubclassOf<UAction_Deal> DealActionClass;
 
 	UPROPERTY(EditAnywhere, Category = "Action Builder")
 	float DefaultDuration = 1.0f;

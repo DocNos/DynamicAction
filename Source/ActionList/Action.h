@@ -16,7 +16,8 @@ enum class EActionType : uint8
 	, Fade UMETA(DisplayName = "Fade")
 	, Delay UMETA(DisplayName = "Delay")
 	, SpawnCard UMETA(DisplayName = "SpawnCard")
-	, AwaitAction UMETA(DisplayName = "Await")
+	, Shuffle UMETA(DisplayName = "Shuffle")
+	, Deal UMETA(DisplayName = "Deal")
 };
 /**
  * 
@@ -122,12 +123,5 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Action")
 	virtual bool IsDone() const { return bIsDone_; }
-	
-
-
-
-
-
-	
 
 };
