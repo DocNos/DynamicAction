@@ -192,8 +192,8 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	int activeSequences_ = 0;
 
-	UFUNCTION(BlueprintCallable, Category = "Director|Shuffle")
-	void ExecuteShuffleSequence(UAction_Shuffle* ShuffleAction);
+	//UFUNCTION(BlueprintCallable, Category = "Director|Shuffle")
+	//void ExecuteShuffleSequence(UAction_Shuffle* ShuffleAction);
 
 	UFUNCTION(BlueprintCallable, Category = "Director|Deal")
 	void ExecuteDealSequence(UAction_Deal* DealAction);
@@ -201,20 +201,40 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Director|Deal")
 	void DealCards(
 		const TArray<AActor*>& Cards,
-		const TArray<FVector>& PlayerPositions,
-		int32 CardsPerPlayer = 5,
+		const TArray<FVector>& PlayerPositions
+		,const TArray<FRotator>& PlayerRotations
+		, float dealDelay = 0.1f
+		,int32 CardsPerPlayer = 5,
 		bool bFaceUp = false,
 		float DealSpeed = 0.3f
 	);
 
 	UFUNCTION(BlueprintCallable, Category = "Director| Shuffle")
 	void PerformCardShuffle(
-		const TArray<AActor*>& Cards,
-		int32 NumShuffles = 3,
+		const TArray<AActor*>& Cards
+		, FVector deckPosition = FVector(0.f)
+		,int32 NumShuffles = 3,
 		float ShuffleDuration = 1.0f
 		, float shuffleRadius = 50.f
+		// Could add a vec3 here for each action's duration split
 	);
 
+	/*
+		
+			FRotator RandomRotation = FRotator(
+				0,
+				FMath::FRandRange(-30.0f, 30.0f),
+				FMath::FRandRange(-10.0f, 10.0f)
+			);
+
+			UAction_Rotate* RotateAction = builder_->CreateRotateAction(
+				Card,
+				Card->GetActorRotation() + RandomRotation,
+				0.4f
+			);
+			RotateAction->bIsBlocking_ = false;
+			FullShuffleSequence.Add(RotateAction);
+	*/
 
 	// Query functions ----------------------------------------------------
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category="Director|Query")

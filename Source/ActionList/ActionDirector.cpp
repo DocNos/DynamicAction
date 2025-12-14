@@ -33,15 +33,6 @@ void UActionDirector::ProcessActive(float dt)
 		UAction* currAction = ActiveActions_[i];
 		if (currAction && currAction->IsActive())
 		{
-			if (UAction_Shuffle* ShuffleAction = Cast<UAction_Shuffle>(currAction))
-			{
-				if (ShuffleAction->ShuffledPositions.Num() > 0 &&
-					ShuffleAction->actionCurrTime_ == 0) // First frame
-				{
-					ExecuteShuffleSequence(ShuffleAction);
-				}
-			}
-
 			//if (currAction->IsBlocking()) return;
 			if (currAction->Update(dt))
 			{
@@ -216,6 +207,224 @@ void UActionDirector::StopAllActions()
 	LogDebug("Stopped all actions");
 }
 
+void UActionDirector::PerformCardShuffle(const TArray<AActor*>& Cards 
+	, FVector deckPosition
+	,int32 NumShuffles
+	,float ShuffleDuration
+	,float shuffleRadius)
+{
+	if (!builder_ || Cards.Num() == 0)
+	{
+		LogDebug_Red("Cannot shuffle: No builder or no cards");
+		return;
+	}
+
+	// Calculate deck position from first card
+	FVector DeckPos = deckPosition;
+	FRotator initialRotation = Cards[0]->GetActorRotation();
+	TArray<UAction*> FullShuffleSequence;
+	TArray<AActor*> CurrentCardOrder = Cards;
+	int32 numCards = Cards.Num();
+	float totalDelayTime = (NumShuffles - 1) * 0.2f + 0.3f + 0.5f;
+	float shuffleTime = ShuffleDuration - totalDelayTime;
+	float timePerShuffleIteration = shuffleTime / NumShuffles;
+
+	for (int32 i = 0; i < NumShuffles; ++i)
+	{
+		float SpreadRadius = shuffleRadius + (i * 50.0f);
+
+		UAction_Shuffle* ShuffleAction = builder_->CreateShuffleAction(
+			CurrentCardOrder, DeckPos, SpreadRadius, timePerShuffleIteration);
+
+		ShuffleAction->CurrentIteration = i;
+		ShuffleAction->TotalIterations = NumShuffles;
+		ShuffleAction->Execute();
+		FullShuffleSequence.Add(ShuffleAction);
+
+		for (int32 j = 0; j < numCards; ++j)
+		{
+			AActor* Card = ShuffleAction->ShuffledCards[j];
+			if (!Card) continue;
+
+			UAction_Move* MoveAction = builder_->CreateMoveAction(
+				Card,
+				ShuffleAction->ShuffledPositions[j],
+				timePerShuffleIteration  // All cards should move simultaneously
+			);
+			MoveAction->bIsBlocking_ = false;
+			FullShuffleSequence.Add(MoveAction);
+		}
+
+		CurrentCardOrder = ShuffleAction->ShuffledCards;
+
+		if (i < NumShuffles - 1)
+		{
+			UAction_Delay* DelayAction = builder_->CreateDelayAction(
+				nullptr, nullptr, 0.0f, 0.2f);
+			FullShuffleSequence.Add(DelayAction);
+		}
+	}
+
+	for (int32 i = 0; i < CurrentCardOrder.Num(); ++i)
+	{
+		FVector StackPosition = DeckPos + FVector(0, 0, i * 0.5f);
+		float returnDuration = 0.5f / numCards;  // Quick stacking
+
+		UAction_Move* ReturnAction = builder_->CreateMoveAction(
+			CurrentCardOrder[i], StackPosition, returnDuration);
+		ReturnAction->bIsBlocking_ = false;
+		FullShuffleSequence.Add(ReturnAction); 
+
+		UAction_Rotate* ResetRotation = builder_->CreateRotateAction(
+			CurrentCardOrder[i], initialRotation, returnDuration);
+		ResetRotation->bIsBlocking_ = false;
+		FullShuffleSequence.Add(ResetRotation);  
+	}
+
+	// Add the full shuffle sequence
+	NewSequence(0, FullShuffleSequence, SeqType::Sequential, "ShuffleIterations");
+
+	LogDebug(FString::Printf(TEXT("Performing %d shuffle iterations with %d cards"),
+							 NumShuffles, Cards.Num()));
+}
+
+
+void UActionDirector::ExecuteDealSequence(UAction_Deal* DealAction)
+{
+	if (!DealAction || !builder_) return;
+
+	// Execute to generate the deal sequence
+	DealAction->Execute();
+	
+	if (DealAction->DealtCards.Num() == 0) return;
+
+	TArray<UAction*> DealSequence;
+
+	for (int32 i = 0; i < DealAction->DealtCards.Num(); ++i)
+	{
+		AActor* Card = DealAction->DealtCards[i];
+		if (!Card) continue;
+
+		// Add delay between cards (except for first card)
+		if (i > 0 && DealAction->DelayBetweenCards > 0)
+		{
+			UAction_Delay* DelayAction = builder_->CreateDelayAction(
+				nullptr, nullptr, 0.0f, DealAction->DelayBetweenCards
+			);
+			DealSequence.Add(DelayAction);
+		}
+
+		// Move card
+		UAction_Move* MoveAction = builder_->CreateMoveAction(
+			Card, DealAction->CardDestinations[i], DealAction->DealSpeed);
+		MoveAction->bIsBlocking_ = false;
+		DealSequence.Add(MoveAction);
+
+
+		// ROTATE to player's hand orientation
+		int32 PlayerIndex = i / DealAction->CardsPerPlayer;  // Assuming round-robin
+		if (PlayerIndex < DealAction->PlayerHands.Num())
+		{
+			FRotator TargetRotation = DealAction->PlayerHands[PlayerIndex].rotation;
+
+			// Add card fan angle
+			int32 CardInHand = i % DealAction->CardsPerPlayer;
+			float FanAngle = -15.0f + (30.0f * CardInHand / FMath::Max(DealAction->CardsPerPlayer - 1, 1));
+			TargetRotation.Yaw += FanAngle;
+
+			UAction_Rotate* RotateAction = builder_->CreateRotateAction(
+				Card, TargetRotation, DealAction->DealSpeed);
+			RotateAction->bIsBlocking_ = false;
+			DealSequence.Add(RotateAction);
+		}
+
+		// Flip card if needed
+		if (DealAction->CardFlipStates[i])
+		{
+			// Face up - might need to flip from face down
+			UAction_Flip* FlipAction = builder_->CreateFlipAction(
+				Card,
+				DealAction->DealSpeed * 0.5f
+			);
+			DealSequence.Add(FlipAction);
+		}
+
+		//// Optional: Add a slight rotation for natural look
+		//FRotator SlightRotation = FRotator(
+		//	0,
+		//	FMath::FRandRange(-5.0f, 5.0f),
+		//	0
+		//);
+		//UAction_Rotate* RotateAction = builder_->CreateRotateAction(
+		//	Card,
+		//	Card->GetActorRotation() + SlightRotation,
+		//	DealAction->DealSpeed
+		//);
+		//RotateAction->bIsBlocking_ = false;
+		//DealSequence.Add(RotateAction);
+	}
+
+	// Execute as sequential to maintain proper dealing order
+	NewSequence(0, DealSequence, SeqType::Sequential, "DealCards");
+
+	LogDebug(FString::Printf(TEXT("Dealing %d cards to %d players"),
+							 DealAction->DealtCards.Num(),
+							 DealAction->PlayerHands.Num()));
+}
+
+
+void UActionDirector::DealCards(
+	const TArray<AActor*>& Cards,
+	const TArray<FVector>& PlayerPositions,
+	const TArray<FRotator>& PlayerRotations,
+	float dealDelay
+	, int32 CardsPerPlayer,
+	bool bFaceUp,
+	float DealSpeed)
+{
+	if (!builder_ || Cards.Num() == 0 || PlayerPositions.Num() == 0)
+	{
+		LogDebug_Red("Cannot deal: Invalid parameters");
+		return;
+	}
+
+	// Create player hand structures from positions
+	TArray<FPlayerHand> PlayerHands;
+	for (int32 i = 0; i < PlayerPositions.Num(); ++i)
+	{
+		FPlayerHand Hand;
+		Hand.Position = PlayerPositions[i];
+		Hand.rotation = (i < PlayerRotations.Num()) ?
+			PlayerRotations[i] : FRotator::ZeroRotator;
+		Hand.HandSpread = 35.0f;
+		Hand.CardStackOffset = 2.0f;
+		Hand.bFaceUp = bFaceUp;
+		PlayerHands.Add(Hand);
+	}
+
+	// Calculate deck position
+	FVector DeckPos = Cards.Num() > 0 ? Cards[0]->GetActorLocation() : FVector::ZeroVector;
+
+	// Create the deal action
+	UAction_Deal* DealAction = builder_->CreateDealAction(
+		Cards,
+		PlayerHands,
+		CardsPerPlayer,
+		DeckPos,
+		DealSpeed
+	);
+
+	OnDirectorRef.Broadcast(DealAction);
+	// Set additional parameters
+	DealAction->DelayBetweenCards = dealDelay;
+	DealAction->bDealRoundRobin = true; // Deal one to each player in turn
+
+	// Execute the deal sequence
+	ExecuteDealSequence(DealAction);
+}
+
+
+/*
 void UActionDirector::ExecuteShuffleSequence(UAction_Shuffle* ShuffleAction)
 {
 	if (!ShuffleAction || !builder_) return;
@@ -267,219 +476,5 @@ void UActionDirector::ExecuteShuffleSequence(UAction_Shuffle* ShuffleAction)
 							 ShuffleAction->ShuffledCards.Num()));
 }
 
-void UActionDirector::PerformCardShuffle(
-	const TArray<AActor*>& Cards
-	,int32 NumShuffles
-	,float ShuffleDuration
-	,float shuffleRadius)
-{
-	if (!builder_ || Cards.Num() == 0)
-	{
-		LogDebug_Red("Cannot shuffle: No builder or no cards");
-		return;
-	}
 
-	// Calculate deck position from first card
-	FVector DeckPos = Cards[0]->GetActorLocation();
-
-	TArray<UAction*> FullShuffleSequence;
-	TArray<AActor*> CurrentCardOrder = Cards;
-
-	for (int32 i = 0; i < NumShuffles; ++i)
-	{
-		// Create shuffle action using builder
-		float IterationDuration = ShuffleDuration / NumShuffles;
-		float SpreadRadius = shuffleRadius + (i * 50.0f); // Increase spread each iteration
-
-		UAction_Shuffle* ShuffleAction = builder_->CreateShuffleAction(
-			CurrentCardOrder,
-			DeckPos,
-			SpreadRadius,
-			IterationDuration
-		);
-
-		// Set iteration information
-		ShuffleAction->CurrentIteration = i;
-		ShuffleAction->TotalIterations = NumShuffles;
-
-		// Execute to generate shuffled positions and order
-		ShuffleAction->Execute();
-
-		// Create the visual movement sequence
-		ExecuteShuffleSequence(ShuffleAction);
-
-		// Add the shuffle action itself to track completion
-		FullShuffleSequence.Add(ShuffleAction);
-
-		// Update card order for next iteration
-		CurrentCardOrder = ShuffleAction->ShuffledCards;
-
-		// Add delay between shuffle iterations using builder
-		if (i < NumShuffles - 1)
-		{
-			UAction_Delay* DelayAction = builder_->CreateDelayAction(
-				nullptr,    // affectedObject
-				nullptr,    // delayedAction
-				0.0f,       // preDelay
-				0.2f        // duration
-			);
-			FullShuffleSequence.Add(DelayAction);
-		}
-	}
-
-	// Add a delay before returning cards to deck
-	UAction_Delay* PreReturnDelay = builder_->CreateDelayAction(
-		nullptr, nullptr, 0.0f, 0.3f
-	);
-	FullShuffleSequence.Add(PreReturnDelay);
-
-	// Return cards to deck position at the end using builder
-	TArray<UAction*> ReturnSequence;
-	for (int32 i = 0; i < CurrentCardOrder.Num(); ++i)
-	{
-		// Calculate stacked position
-		FVector StackPosition = DeckPos + FVector(0, 0, i * 0.5f);
-
-		// Create move action using builder
-		UAction_Move* ReturnAction = builder_->CreateMoveAction(
-			CurrentCardOrder[i],
-			StackPosition,
-			0.3f
-		);
-		ReturnAction->bIsBlocking_ = false;
-		ReturnSequence.Add(ReturnAction);
-
-		// Reset rotation to zero using builder
-		UAction_Rotate* ResetRotation = builder_->CreateRotateAction(
-			CurrentCardOrder[i],
-			FRotator::ZeroRotator,
-			0.3f
-		);
-		ResetRotation->bIsBlocking_ = false;
-		ReturnSequence.Add(ResetRotation);
-	}
-
-	// Add the full shuffle sequence
-	NewSequence(0, FullShuffleSequence, SeqType::Sequential, "ShuffleIterations");
-
-	// Add return to deck as simultaneous movements
-	NewSequence(0, ReturnSequence, SeqType::Simultaneous, "ReturnToDeck");
-
-	LogDebug(FString::Printf(TEXT("Performing %d shuffle iterations with %d cards"),
-							 NumShuffles, Cards.Num()));
-}
-
-void UActionDirector::ExecuteDealSequence(UAction_Deal* DealAction)
-{
-	if (!DealAction || !builder_) return;
-
-	// Execute to generate the deal sequence
-	DealAction->Execute();
-	
-	if (DealAction->DealtCards.Num() == 0) return;
-
-	TArray<UAction*> DealSequence;
-
-	for (int32 i = 0; i < DealAction->DealtCards.Num(); ++i)
-	{
-		AActor* Card = DealAction->DealtCards[i];
-		if (!Card) continue;
-
-		// Add delay between cards (except for first card)
-		if (i > 0 && DealAction->DelayBetweenCards > 0)
-		{
-			UAction_Delay* DelayAction = builder_->CreateDelayAction(
-				nullptr, nullptr, 0.0f, DealAction->DelayBetweenCards
-			);
-			DealSequence.Add(DelayAction);
-		}
-
-		// Move card from deck to destination
-		UAction_Move* MoveAction = builder_->CreateMoveAction(
-			Card,
-			DealAction->CardDestinations[i],
-			DealAction->DealSpeed
-		);
-		MoveAction->bIsBlocking_ = false;
-		DealSequence.Add(MoveAction);
-
-		// Flip card if needed
-		if (DealAction->CardFlipStates[i])
-		{
-			// Face up - might need to flip from face down
-			UAction_Flip* FlipAction = builder_->CreateFlipAction(
-				Card,
-				DealAction->DealSpeed * 0.5f
-			);
-			DealSequence.Add(FlipAction);
-		}
-
-		// Optional: Add a slight rotation for natural look
-		FRotator SlightRotation = FRotator(
-			0,
-			FMath::FRandRange(-5.0f, 5.0f),
-			0
-		);
-		UAction_Rotate* RotateAction = builder_->CreateRotateAction(
-			Card,
-			Card->GetActorRotation() + SlightRotation,
-			DealAction->DealSpeed
-		);
-		RotateAction->bIsBlocking_ = false;
-		DealSequence.Add(RotateAction);
-	}
-
-	// Execute as sequential to maintain proper dealing order
-	NewSequence(0, DealSequence, SeqType::Sequential, "DealCards");
-
-	LogDebug(FString::Printf(TEXT("Dealing %d cards to %d players"),
-							 DealAction->DealtCards.Num(),
-							 DealAction->PlayerHands.Num()));
-}
-
-
-void UActionDirector::DealCards(
-	const TArray<AActor*>& Cards,
-	const TArray<FVector>& PlayerPositions,
-	int32 CardsPerPlayer,
-	bool bFaceUp,
-	float DealSpeed)
-{
-	if (!builder_ || Cards.Num() == 0 || PlayerPositions.Num() == 0)
-	{
-		LogDebug_Red("Cannot deal: Invalid parameters");
-		return;
-	}
-
-	// Create player hand structures from positions
-	TArray<FPlayerHand> PlayerHands;
-	for (const FVector& Pos : PlayerPositions)
-	{
-		FPlayerHand Hand;
-		Hand.Position = Pos;
-		Hand.HandSpread = 35.0f;
-		Hand.CardStackOffset = 2.0f;
-		Hand.bFaceUp = bFaceUp;
-		PlayerHands.Add(Hand);
-	}
-
-	// Calculate deck position
-	FVector DeckPos = Cards.Num() > 0 ? Cards[0]->GetActorLocation() : FVector::ZeroVector;
-
-	// Create the deal action
-	UAction_Deal* DealAction = builder_->CreateDealAction(
-		Cards,
-		PlayerHands,
-		CardsPerPlayer,
-		DeckPos,
-		DealSpeed
-	);
-
-	OnDirectorRef.Broadcast(DealAction);
-	// Set additional parameters
-	DealAction->DelayBetweenCards = 0.1f;
-	DealAction->bDealRoundRobin = true; // Deal one to each player in turn
-
-	// Execute the deal sequence
-	ExecuteDealSequence(DealAction);
-}
+*/

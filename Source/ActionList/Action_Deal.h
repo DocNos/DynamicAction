@@ -15,6 +15,9 @@ struct FPlayerHand
 	FVector Position;
 
 	UPROPERTY(BlueprintReadWrite)
+	FRotator rotation;
+
+	UPROPERTY(BlueprintReadWrite)
 	float HandSpread = 30.0f;
 
 	UPROPERTY(BlueprintReadWrite)
