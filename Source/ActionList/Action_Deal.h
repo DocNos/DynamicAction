@@ -15,7 +15,7 @@ struct FPlayerHand
 	FVector Position;
 
 	UPROPERTY(BlueprintReadWrite)
-	FRotator rotation;
+	FRotator Rotation;
 
 	UPROPERTY(BlueprintReadWrite)
 	float HandSpread = 30.0f;
@@ -70,6 +70,10 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Deal")
 	TArray<FVector> CardDestinations;
 
+
+	UPROPERTY(BlueprintReadOnly, Category = "Deal")
+	TArray<FRotator> CardRotations;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Deal")
 	TArray<int32> PlayerAssignments;
 
@@ -79,6 +83,9 @@ public:
 	// State tracking
 	UPROPERTY(BlueprintReadOnly, Category = "Deal")
 	int32 CurrentCardIndex = 0;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Deal")
+	int32 PrevCardIndex = 0;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Deal")
 	bool bDealingComplete = false;
@@ -99,6 +106,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Deal")
 	FVector CalculateCardPosition(int32 PlayerIndex, int32 CardIndexInHand);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Deal")
+	FRotator CalculateCardRotation(int32 PlayerIndex, int32 CardIndexInHand);
 
 private:
 	void GenerateDealSequence();

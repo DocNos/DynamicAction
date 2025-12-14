@@ -110,6 +110,7 @@ UAction_Shuffle* UActionBuilder::CreateShuffleAction(
 	newShuffle->Initialize(Cards, DeckPosition, SpreadRadius, Duration);
 	newShuffle->Init();
 
+
 	return newShuffle;
 }
 

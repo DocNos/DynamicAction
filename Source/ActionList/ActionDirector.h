@@ -58,6 +58,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDirectorTick, float, deltaTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpawnCard, UAction_SpawnCard*, SpawnAction);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam
 (FOnDirectorRef, UAction_Deal*, dealAction);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam
+(FOnDirectorReference_Shuffle, UAction_Shuffle*, shuffleAction);
+
 UCLASS(Blueprintable)
 class ACTIONLIST_API UActionDirector : public UGameInstance, public FTickableGameObject
 {
@@ -99,6 +102,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Director|Events")
 	FOnDirectorRef OnDirectorRef;
+
+	UPROPERTY(BlueprintAssignable, Category = "Director | Events")
+	FOnDirectorReference_Shuffle OnDirectorRef_Shuffle;
 
 public:	
 	// Overrides ---------------------------------------------------------
@@ -216,7 +222,7 @@ public:
 		,int32 NumShuffles = 3,
 		float ShuffleDuration = 1.0f
 		, float shuffleRadius = 50.f
-		// Could add a vec3 here for each action's duration split
+		, float returnDuration = 0.3f
 	);
 
 	/*

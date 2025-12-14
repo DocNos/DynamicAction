@@ -44,14 +44,26 @@ void UAction_Deal::Execute()
 	OnActionExecute.Broadcast();
 }
 
+bool UAction_Deal::Update(float dt)
+{
+	actionCurrTime_ += dt;
+
+	// Progress tracking for visual feedback
+	float Progress = FMath::Clamp(actionCurrTime_ / actionDuration_, 0.0f, 1.0f);
+	OnActionUpdate.Broadcast(Progress);
+
+	return actionCurrTime_ >= actionDuration_;
+}
+
 void UAction_Deal::GenerateDealSequence()
 {
 	DealtCards.Empty();
 	CardDestinations.Empty();
+	CardRotations.Empty();
 	PlayerAssignments.Empty();
 	CardFlipStates.Empty();
 
-	int32 CardIndex = 0;
+	int32 CardIndex = Cards.Num() - 1;
 
 	if (bDealRoundRobin)
 	{
@@ -60,7 +72,7 @@ void UAction_Deal::GenerateDealSequence()
 		{
 			for (int32 PlayerIdx = 0; PlayerIdx < PlayerHands.Num(); ++PlayerIdx)
 			{
-				if (CardIndex >= Cards.Num())
+				if (CardIndex <= 0)
 				{
 					bDealingComplete = true;
 					return;
@@ -68,10 +80,10 @@ void UAction_Deal::GenerateDealSequence()
 
 				DealtCards.Add(Cards[CardIndex]);
 				CardDestinations.Add(CalculateCardPosition(PlayerIdx, Round));
+				CardRotations.Add(CalculateCardRotation(PlayerIdx, Round));
 				PlayerAssignments.Add(PlayerIdx);
 				CardFlipStates.Add(PlayerHands[PlayerIdx].bFaceUp);
-				OnCardDealt.Broadcast(PlayerIdx, Cards[CardIndex]);
-				CardIndex++;
+				CardIndex--;
 			}
 		}
 	}
@@ -82,7 +94,7 @@ void UAction_Deal::GenerateDealSequence()
 		{
 			for (int32 CardNum = 0; CardNum < CardsPerPlayer; ++CardNum)
 			{
-				if (CardIndex >= Cards.Num())
+				if (CardIndex <= 0)
 				{
 					bDealingComplete = true;
 					return;
@@ -93,7 +105,7 @@ void UAction_Deal::GenerateDealSequence()
 				PlayerAssignments.Add(PlayerIdx);
 				CardFlipStates.Add(PlayerHands[PlayerIdx].bFaceUp);
 
-				CardIndex++;
+				CardIndex--;
 			}
 		}
 	}
@@ -110,21 +122,40 @@ FVector UAction_Deal::CalculateCardPosition(int32 PlayerIndex, int32 CardIndexIn
 
 	const FPlayerHand& Hand = PlayerHands[PlayerIndex];
 
-	// Calculate position with spread and stack offset
+	// Calculate position with spread along player's local X axis
 	FVector Position = Hand.Position;
-	Position.X += CardIndexInHand * Hand.HandSpread;
-	Position.Z += CardIndexInHand * Hand.CardStackOffset;
+
+	// Apply spread in local hand space
+	FVector LocalOffset = FVector(CardIndexInHand * Hand.HandSpread, 0, CardIndexInHand * Hand.CardStackOffset);
+	FVector WorldOffset = Hand.Rotation.RotateVector(LocalOffset);
+	Position += WorldOffset;
 
 	return Position;
 }
 
-bool UAction_Deal::Update(float dt)
+
+FRotator UAction_Deal::CalculateCardRotation(int32 PlayerIndex, int32 CardIndexInHand)
 {
-	actionCurrTime_ += dt;
+	if (!PlayerHands.IsValidIndex(PlayerIndex))
+	{
+		return FRotator::ZeroRotator;
+	}
 
-	// Progress tracking for visual feedback
-	float Progress = FMath::Clamp(actionCurrTime_ / actionDuration_, 0.0f, 1.0f);
-	OnActionUpdate.Broadcast(Progress);
+	const FPlayerHand& Hand = PlayerHands[PlayerIndex];
 
-	return actionCurrTime_ >= actionDuration_;
+	// Base rotation matches player's hand orientation
+	FRotator CardRotation = Hand.Rotation;
+
+	// Add fan angle for card spread
+	float FanAngle = -15.0f + (30.0f * CardIndexInHand / FMath::Max(CardsPerPlayer - 1, 1));
+	CardRotation.Yaw += FanAngle;
+
+	// If face down, add 180 degree pitch rotation
+	if (!Hand.bFaceUp)
+	{
+		CardRotation.Pitch += 180.0f;
+	}
+
+	return CardRotation;
 }
+

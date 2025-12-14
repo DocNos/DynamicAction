@@ -347,7 +347,7 @@ void UActionDirector::ExecuteDealSequence(UAction_Deal* DealAction)
 
 		// BROADCAST when card starts moving!
 		int32 PlayerIdx = DealAction->PlayerAssignments[i];
-		DealAction->OnCardDealt.Broadcast(PlayerIdx+1, Card);
+		DealAction->OnCardDealt.Broadcast(PlayerIdx, Card);
 
 		// Move card
 		UAction_Move* MoveAction = builder_->CreateMoveAction(

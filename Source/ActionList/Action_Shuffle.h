@@ -7,6 +7,8 @@
 #include "Action_Move.h"
 #include "Action_Shuffle.generated.h"
 
+
+
 /**
  * 
  */
@@ -17,6 +19,8 @@ class ACTIONLIST_API UAction_Shuffle : public UAction
 	GENERATED_BODY()
 
 public:
+	
+
 	UPROPERTY(BlueprintReadWrite, Category = "Shuffle")
 	TArray<AActor*> Cards;
 
@@ -36,11 +40,11 @@ public:
 	int32 TotalIterations = 3;
 
 	// Stores the shuffled positions for director to use
-	UPROPERTY(BlueprintReadOnly, Category = "Shuffle")
+	UPROPERTY(BlueprintReadWrite, Category = "Shuffle")
 	TArray<FVector> ShuffledPositions;
 
 	// Stores the new order after shuffling
-	UPROPERTY(BlueprintReadOnly, Category = "Shuffle")
+	UPROPERTY(BlueprintReadWrite, Category = "Shuffle")
 	TArray<AActor*> ShuffledCards;
 
 	virtual void Init() override;
