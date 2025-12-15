@@ -143,12 +143,24 @@ FRotator UAction_Deal::CalculateCardRotation(int32 PlayerIndex, int32 CardIndexI
 
 	const FPlayerHand& Hand = PlayerHands[PlayerIndex];
 
-	// Base rotation matches player's hand orientation
-	FRotator CardRotation = Hand.Rotation;
+	FVector HandToCenter = DeckPosition - Hand.Position;
+	HandToCenter.Z = 0;  // Only care about horizontal direction
+
+	FRotator CardRotation;
+
+	if (!HandToCenter.IsNearlyZero())
+	{
+		CardRotation = HandToCenter.Rotation();
+	}
+	else
+	{
+		// Fallback to hand rotation if at center
+		CardRotation = Hand.Rotation;
+	}
 
 	// Add fan angle for card spread
 	float FanAngle = -15.0f + (30.0f * CardIndexInHand / FMath::Max(CardsPerPlayer - 1, 1));
-	CardRotation.Yaw += FanAngle;
+	CardRotation.Yaw += (FanAngle -90.f);
 
 	// If face down, add 180 degree pitch rotation
 	if (!Hand.bFaceUp)

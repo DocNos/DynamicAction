@@ -212,7 +212,14 @@ void UActionDirector::PerformCardShuffle(const TArray<AActor*>& Cards
 	,int32 NumShuffles
 	,float ShuffleDuration
 	,float shuffleRadius
-	,float returnDuration)
+	,float returnDuration
+	//, float liftHeight
+	, int numIterations
+	, bool usePhysics
+	, float scatterForce
+	, float minPhysSettleTime
+	, float maxPhysSettleTime
+	, float settleVelThreshold)
 {
 	if (!builder_ || Cards.Num() == 0)
 	{
@@ -248,8 +255,16 @@ void UActionDirector::PerformCardShuffle(const TArray<AActor*>& Cards
 		float SpreadRadius = shuffleRadius + (i * 50.0f);
 
 		UAction_Shuffle* ShuffleAction = builder_->CreateShuffleAction(
-			CurrentCardOrder, DeckPos, SpreadRadius, timePerShuffleIteration);
-
+			CurrentCardOrder, DeckPos, SpreadRadius
+			, timePerShuffleIteration
+			//, liftHeight
+			, numIterations
+			, usePhysics
+			, scatterForce
+			, minPhysSettleTime
+			, maxPhysSettleTime
+			, settleVelThreshold);
+		
 		ShuffleAction->CurrentIteration = i;
 		ShuffleAction->TotalIterations = NumShuffles;
 		OnDirectorRef_Shuffle.Broadcast(ShuffleAction);
@@ -416,14 +431,32 @@ void UActionDirector::DealCards(
 		return;
 	}
 
-	// Create player hand structures from positions
 	TArray<FPlayerHand> PlayerHands;
 	for (int32 i = 0; i < PlayerPositions.Num(); ++i)
 	{
 		FPlayerHand Hand;
 		Hand.Position = PlayerPositions[i];
-		Hand.Rotation = (i < PlayerRotations.Num()) ?
-			PlayerRotations[i] : FRotator::ZeroRotator;
+
+		// Calculate rotation to face table center
+		FVector DeckPos = Cards[0]->GetActorLocation();
+		FVector ToCenter = DeckPos - PlayerPositions[i];
+		ToCenter.Z = 0;
+
+		// Set rotation to face center
+		if (!ToCenter.IsNearlyZero())
+		{
+			Hand.Rotation = ToCenter.Rotation();
+			Hand.Rotation.Yaw -= 90.f;
+		}
+		else if (i < PlayerRotations.Num())
+		{
+			Hand.Rotation = PlayerRotations[i];
+		}
+		else
+		{
+			Hand.Rotation = FRotator::ZeroRotator;
+		}
+
 		Hand.HandSpread = 35.0f;
 		Hand.CardStackOffset = 2.0f;
 		Hand.bFaceUp = bFaceUp;

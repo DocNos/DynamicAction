@@ -104,10 +104,26 @@ UAction_Shuffle* UActionBuilder::CreateShuffleAction(
 	const TArray<AActor*>& Cards,
 	FVector DeckPosition,
 	float SpreadRadius,
-	float Duration)
+	float Duration
+	//, float liftHeight
+	, int numIterations
+	, bool usePhysics
+	, float scatterForce
+	, float minPhysSettleTime
+	, float maxPhysSettleTime
+	, float settleVelThreshold)
 {
 	UAction_Shuffle* newShuffle = NewObject<UAction_Shuffle>(this, ShuffleActionClass);
-	newShuffle->Initialize(Cards, DeckPosition, SpreadRadius, Duration);
+	newShuffle->Initialize
+	(Cards, DeckPosition, SpreadRadius
+	, Duration
+	//, liftHeight
+	, numIterations
+	, usePhysics
+	, scatterForce
+	, minPhysSettleTime
+	, maxPhysSettleTime
+	, settleVelThreshold);
 	newShuffle->Init();
 
 

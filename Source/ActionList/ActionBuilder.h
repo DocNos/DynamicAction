@@ -70,6 +70,13 @@ public:
 		FVector DeckPosition,
 		float SpreadRadius,
 		float Duration
+		//, float liftHeight
+		, int numIterations
+		, bool usePhysics
+		, float scatterForce
+		, float minPhysSettleTime
+		, float maxPhysSettleTime
+		, float settleVelThreshold
 	);
 
 	UFUNCTION(BlueprintCallable, Category = "Action Builder")

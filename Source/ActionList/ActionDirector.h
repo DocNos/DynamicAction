@@ -223,6 +223,13 @@ public:
 		float ShuffleDuration = 1.0f
 		, float shuffleRadius = 50.f
 		, float returnDuration = 0.3f
+		//, float liftHeight = 50.f
+		, int numIterations = 3
+		, bool usePhysics = false
+		, float scatterForce = 500.f
+		, float minPhysSettleTime = 2.f
+		, float maxPhysSettleTime = 5.f
+		, float settleVelThreshold = 10.f
 	);
 
 	/*
